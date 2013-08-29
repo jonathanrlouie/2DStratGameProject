@@ -1,6 +1,6 @@
 package game
 
-class BoardLocation(tile : Char, c : Character) {
+class BoardLocation(tile : Char, c : CharacterUnit) {
   var isWall : Boolean = false
   
   var sprite : Sprite = _
