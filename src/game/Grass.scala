@@ -1,6 +1,7 @@
 package game
 
 class Grass extends Block{
+   val name = "Grass"
    val durability = 2
-   val roughness = 0
+   val movPenalty = 0
 }

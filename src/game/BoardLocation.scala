@@ -8,6 +8,7 @@ class BoardLocation(tile : Char, c : CharacterUnit) {
   tile match {
     case 'W' => isWall = true
     case 'G' => sprite = new Grass
+    case 'S' => sprite = new Sand
     // TODO: reduce cases to 1 case only; try converting to ASCII first
     case 'a' => sprite = c
     case _ => 
@@ -21,8 +22,10 @@ class BoardLocation(tile : Char, c : CharacterUnit) {
   }
   
   def hasSprite : Boolean = {
-    sprite == null
+    sprite != null
   }
+  
+  def getSprite : Sprite = sprite
   
   def addSprite(spr : Sprite) {
     sprite = spr
