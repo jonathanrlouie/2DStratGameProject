@@ -7,6 +7,7 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
 		  					   "GGGG"
   var boardwidth : Int = w
   var boardheight : Int = h
+  var cursorPos = new Array[Int](2)
   var boardmap : String = map
   var board : Array[Array[BoardLocation]] = _
   var characters : Array[CharacterUnit] = c
@@ -22,7 +23,7 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
    */
   def createBoard{
     
-    
+    setCursor(0,0)
     board = new Array[Array[BoardLocation]](boardheight)
     for (i <- 0 until boardheight){
       board(i) = new Array[BoardLocation](boardwidth)
@@ -74,6 +75,13 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
    */
   def getBoardLocation(x:Int, y:Int) : BoardLocation = {
     (board(y))(x)
+  }
+  
+  def getCursor: Array[Int] = cursorPos
+  
+  def setCursor(x: Int, y:Int) {
+    cursorPos(0) = x
+    cursorPos(1) = y
   }
   
   def getBoard : Array[Array[BoardLocation]] = board
