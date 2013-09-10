@@ -1,6 +1,7 @@
 package game
 
-class Knight extends Fighter{
+class Knight(weps: Array[Weapon]) extends Fighter{
   val name = "Knight"
+  weapons = weps
 
 }

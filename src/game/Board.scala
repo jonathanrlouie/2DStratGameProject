@@ -52,9 +52,9 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
   
   def addBoardLocation(tile : Char, i : Int, x : Int , y : Int){
     if (i >= 0){
-      (board(y))(x) = new BoardLocation(tile, characters(i))
+      (board(y))(x) = new BoardLocation(tile, characters(i), x, y)
     } else {
-      (board(y))(x) = new BoardLocation(tile, null)
+      (board(y))(x) = new BoardLocation(tile, null, x, y)
     }
   }
   

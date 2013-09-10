@@ -1,7 +1,10 @@
 package game
 
-class BoardLocation(tile : Char, c : CharacterUnit) {
+class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
   var isWall : Boolean = false
+  val boardx = x
+  val boardy = y
+  val spriteSize = 40
   
   var sprite : Sprite = _
   
@@ -14,6 +17,9 @@ class BoardLocation(tile : Char, c : CharacterUnit) {
     case _ => 
   }
   
+  if (sprite.isInstanceOf[CharacterUnit]){
+    sprite.asInstanceOf[CharacterUnit].setXandY(spriteSize*boardx,spriteSize*boardy)
+  }
   /** may need to be changed later to accomodate tiles that can be passsed
    * 
    */
