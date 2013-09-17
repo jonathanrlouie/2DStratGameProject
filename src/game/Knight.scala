@@ -1,7 +1,7 @@
 package game
 
 class Knight(weps: Array[Weapon]) extends Fighter{
-  val name = "Knight"
+  override val name = "Knight"
   weapons = weps
 
 }

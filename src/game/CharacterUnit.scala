@@ -12,7 +12,13 @@ abstract class CharacterUnit extends Sprite{
 	var weapons = new Array[Weapon](5)
 	var selectedWeapon : Int = 0
 	var faceR : Boolean = false
-	var selected : Boolean = false
+	
+	/** type of selection:
+	 *  0 = unselected
+	 *  1 = selected for movement
+	 *  2 = selecting weapon
+	 */
+	var selected : Int = 0
 	
 	/** moves the unit to the specified tile space if valid
 	 * 
@@ -44,6 +50,9 @@ abstract class CharacterUnit extends Sprite{
 	
     def getX : Int = xcoord
     def getY : Int = ycoord
+    def getSelectedWep: Int = selectedWeapon
+    def getSelected: Int = selected
+    def getWeapons: Array[Weapon] = weapons
     
     def setHp(maxhp : Int){
       hp_max = maxhp
@@ -63,10 +72,11 @@ abstract class CharacterUnit extends Sprite{
       ycoord = y
     }
     
-    def setSelected(sel : Boolean){
+    def setSelected(sel : Int){
       selected = sel
     }
     
-    def isSelected : Boolean = selected
-	
+    def setSelectedWep(sel : Int){
+      selectedWeapon = sel
+    }
 }

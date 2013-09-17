@@ -9,7 +9,6 @@ class Play(state : Int) extends BasicGameState{
   val spriteSize = 40
   //placeholder
   val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife)))
-  var selectingWep = false
   
   var board : Board = new Board(units,12,7,"GEEEEEEEEEEG"+
   								   		   "GEEEEGEEEEEG"+
@@ -18,6 +17,8 @@ class Play(state : Int) extends BasicGameState{
   						 			       "SEEEEEESEEES"+
   										   "SEaEEEESEEES"+
   										   "SSSSSSSSSSSS")
+  
+  var unitSel: CharacterUnit = units(0)
   
   def load(path : String) : Object = {
 	var ois : ObjectInputStream = new ObjectInputStream(new FileInputStream(path))
@@ -33,16 +34,20 @@ class Play(state : Int) extends BasicGameState{
   override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics){
     renderBoard(g)
     
-    if (selectingWep){
-      for (i <- 0 until units.length){
-        if (units(i).isSelected){
-          val xcoord = units(i).getX
-          val ycoord = units(i).getY
+    if (unitSel.getSelected == 2){
+      val xcoord = unitSel.getX
+      val ycoord = unitSel.getY
           
-          //placeholder
-          g.setColor(Color.black)
-          g.drawRect(xcoord-100,ycoord-5,32*5,32)
-        }
+      //placeholder
+      g.setColor(Color.black)
+      g.drawRect(220,0,40*5,40)
+      val weps = unitSel.getWeapons
+      g.setColor(Color.green)
+      g.drawRect(40*unitSel.getSelectedWep+220,0,40,40)
+      for (i <- 0 until 5){
+        //if (weps(i) != null){
+          new Image("res/" + /*weps(i).getName*/ "Grass" + ".png").draw(spriteSize*i+221,1)
+        //}
       }
     }
     
@@ -56,7 +61,7 @@ class Play(state : Int) extends BasicGameState{
     val cursorX = board.getCursor(0)
     val cursorY = board.getCursor(1)
     
-    if (!selectingWep){
+    if (unitSel.getSelected == 0){
       if (input.isKeyPressed(Keyboard.KEY_LEFT)){
         if (cursorX > 0){
           board.setCursor(cursorX-1,cursorY)
@@ -77,13 +82,25 @@ class Play(state : Int) extends BasicGameState{
           board.setCursor(cursorX,cursorY-1)
         }
       }
-      else if (input.isKeyPressed(Keyboard.KEY_Z)){
+      else if (input.isKeyPressed(Keyboard.KEY_X)){
         val boardloc = board.getBoardLocation(cursorX,cursorY)
         if (boardloc.hasSprite){
           if (boardloc.getSprite.isInstanceOf[CharacterUnit]){
-            selectingWep = true
-            boardloc.getSprite.asInstanceOf[CharacterUnit].setSelected(true)
+            unitSel = boardloc.getSprite.asInstanceOf[CharacterUnit]
+            boardloc.getSprite.asInstanceOf[CharacterUnit].setSelected(2)
           }
+        }
+      }
+    }
+    else if (unitSel.getSelected == 2){
+      if (input.isKeyPressed(Keyboard.KEY_RIGHT)){
+        if (unitSel.getSelectedWep < 4){
+          unitSel.setSelectedWep(unitSel.getSelectedWep+1)
+        }
+      }
+      else if (input.isKeyPressed(Keyboard.KEY_LEFT)){
+        if (unitSel.getSelectedWep > 0){
+          unitSel.setSelectedWep(unitSel.getSelectedWep-1)
         }
       }
     }
@@ -99,13 +116,13 @@ class Play(state : Int) extends BasicGameState{
         if (bl.hasSprite){
           val blspr = bl.getSprite
           if (blspr.isInstanceOf[Block]){
-            val img : Image = new Image("res/" + bl.getSprite.getName + ".png")
+            val img : Image = new Image("res/" + blspr.getName + ".png")
             img.draw(spriteSize*i,spriteSize*j)
           } 
           else if (blspr.isInstanceOf[CharacterUnit]){
             //obvious placeholder
             g.setColor(Color.green)
-            g.drawRect(blspr.asInstanceOf[CharacterUnit].getX,blspr.asInstanceOf[CharacterUnit].getY,40,40)
+            g.drawRect(blspr.asInstanceOf[CharacterUnit].getX,blspr.asInstanceOf[CharacterUnit].getY,39,39)
           }
         }
       }
