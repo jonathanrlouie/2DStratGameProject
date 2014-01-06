@@ -1,6 +1,9 @@
 package game
 
+import scala.Array
+
 class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
+  // (0,0) is at the top left here
   val DEFAULT_BOARD : String = "GGGG" +
 		  					   "GEEG" +
 		  					   "GEEG" +
@@ -9,7 +12,8 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
   var boardheight : Int = h
   var cursorPos = new Array[Int](2)
   var boardmap : String = map
-  var board : Array[Array[BoardLocation]] = _
+  
+  var board = Array.ofDim[BoardLocation](boardheight,boardwidth)
   var characters : Array[CharacterUnit] = c
   
   
@@ -24,10 +28,6 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
   def createBoard{
     
     setCursor(0,0)
-    board = new Array[Array[BoardLocation]](boardheight)
-    for (i <- 0 until boardheight){
-      board(i) = new Array[BoardLocation](boardwidth)
-    }
     
     for (i <- 0 until boardmap.length){
       var charOnBoard : Char = boardmap.charAt(i)
@@ -51,6 +51,7 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
    */
   
   def addBoardLocation(tile : Char, i : Int, x : Int , y : Int){
+    // i determines if a character should be added or not
     if (i >= 0){
       (board(y))(x) = new BoardLocation(tile, characters(i), x, y)
     } else {

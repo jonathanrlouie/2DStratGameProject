@@ -17,16 +17,24 @@ class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
     case _ => 
   }
   
-  if (sprite.isInstanceOf[CharacterUnit]){
-    sprite.asInstanceOf[CharacterUnit].setXandY(spriteSize*boardx,spriteSize*boardy)
-  }
-  /** may need to be changed later to accomodate tiles that can be passsed
-   * 
-   */
-  def isPassable : Boolean = {
-    hasSprite
+  if (sprite.isInstanceOf[Block]){
+    isWall = true
   }
   
+  if (sprite.isInstanceOf[CharacterUnit]){
+    sprite.asInstanceOf[CharacterUnit].setXandY(spriteSize*boardx,spriteSize*boardy)
+    sprite.asInstanceOf[CharacterUnit].setBoardXandY(boardx,boardy)
+  }
+  
+  // needs to be fixed to properly work 
+  // TODO
+  def isPassable : Boolean = {
+    //hasSprite
+    !isWall
+  }
+  
+  // this needs to change, null isn't useful in scala
+  // TODO
   def hasSprite : Boolean = {
     sprite != null
   }
@@ -36,5 +44,9 @@ class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
   def addSprite(spr : Sprite) {
     sprite = spr
   }
+  
+  // get the board coordinates of this board location
+  def getBoardX: Int = boardx
+  def getBoardY: Int = boardy
 
 }

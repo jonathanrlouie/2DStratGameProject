@@ -5,20 +5,25 @@ import org.lwjgl.input.Keyboard
 import org.newdawn.slick._
 import org.newdawn.slick.state._
 import game._
+import scala.util.control.Breaks._
+import scala.Array
+
 class Play(state : Int) extends BasicGameState{
   val spriteSize = 40
   //placeholder
   val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife)))
   
-  var board : Board = new Board(units,12,7,"GEEEEEEEEEEG"+
-  								   		   "GEEEEGEEEEEG"+
-  										   "SEEEEEESEEES"+
-  										   "SEEEEEEEEEES"+
-  						 			       "SEEEEEESEEES"+
-  										   "SEaEEEESEEES"+
+  var board : Board = new Board(units,12,7,"GEEEEaEEEEEG"+
+  								   		   "GEEESSESEEEG"+
+  										   "SEESEEEEEEES"+
+  										   "SEEEEESEEEES"+
+  						 			       "SEEEEEEEEEES"+
+  										   "SEEESSSEEEES"+
   										   "SSSSSSSSSSSS")
   
   var unitSel: CharacterUnit = units(0)
+  var parent = Array.fill[Int](board.getBoardHeight,board.getBoardWidth,3){-100}
+  
   
   def load(path : String) : Object = {
 	var ois : ObjectInputStream = new ObjectInputStream(new FileInputStream(path))
@@ -33,6 +38,19 @@ class Play(state : Int) extends BasicGameState{
   
   override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics){
     renderBoard(g)
+    
+    // temporary way to render moveable tiles
+    if (unitSel.getSelected == 1){
+      g.setColor(Color.red)
+      for(i <- 0 until board.getBoardHeight){
+        for (j <- 0 until board.getBoardWidth){
+          if (((parent(i))(j))(0) != -100) {
+            
+            g.drawRect(j*spriteSize,i*spriteSize,spriteSize-1,spriteSize-1)
+          }
+        }
+      }
+    }
     
     if (unitSel.getSelected == 2){
       val xcoord = unitSel.getX
@@ -61,6 +79,7 @@ class Play(state : Int) extends BasicGameState{
     val cursorX = board.getCursor(0)
     val cursorY = board.getCursor(1)
     
+    // unit unselected
     if (unitSel.getSelected == 0){
       if (input.isKeyPressed(Keyboard.KEY_LEFT)){
         if (cursorX > 0){
@@ -82,6 +101,7 @@ class Play(state : Int) extends BasicGameState{
           board.setCursor(cursorX,cursorY-1)
         }
       }
+      // press X to enter weapon selection
       else if (input.isKeyPressed(Keyboard.KEY_X)){
         val boardloc = board.getBoardLocation(cursorX,cursorY)
         if (boardloc.hasSprite){
@@ -91,7 +111,33 @@ class Play(state : Int) extends BasicGameState{
           }
         }
       }
+      // press Z to move selected unit
+      else if (input.isKeyPressed(Keyboard.KEY_Z)){
+        val boardloc = board.getBoardLocation(cursorX,cursorY)
+        if (boardloc.hasSprite){
+          if (boardloc.getSprite.isInstanceOf[CharacterUnit]){
+            unitSel = boardloc.getSprite.asInstanceOf[CharacterUnit]
+            boardloc.getSprite.asInstanceOf[CharacterUnit].setSelected(1)
+          }
+        }
+      }
     }
+    // if selected for movement
+    else if (unitSel.getSelected == 1){
+      // oh man it gets really crazy from here
+      val boardWidth = board.getBoardWidth
+      val boardHeight = board.getBoardHeight
+      val move = unitSel.getMove;
+      val jump = unitSel.getJump;
+      if (unitSel.isInstanceOf[AirUnit]){
+        // TODO
+      } else {
+        // generate the valid movement locations for a unit given its move, jump, and initial board location
+        (parent(unitSel.getBoardY))(unitSel.getBoardX) = Array(unitSel.getBoardX,unitSel.getBoardY,move+1);
+        groundMoveTiles(move,jump,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
+      }
+    }
+    // if selecting a weapon
     else if (unitSel.getSelected == 2){
       if (input.isKeyPressed(Keyboard.KEY_RIGHT)){
         if (unitSel.getSelectedWep < 4){
@@ -103,6 +149,111 @@ class Play(state : Int) extends BasicGameState{
           unitSel.setSelectedWep(unitSel.getSelectedWep-1)
         }
       }
+      // cancel an attack
+      else if (input.isKeyPressed(Keyboard.KEY_S)){
+        unitSel.setSelected(0);
+      }
+      // confirmation button; attack with selected wep
+      else if (input.isKeyPressed(Keyboard.KEY_C)){
+        // implement weapon attacking here
+      }
+    }
+  }
+  
+  /** finds the valid locations on the board that selected
+   *  unit can move to immediately
+   *  and recurses until the unit is out of movement points
+   */
+  def groundMoveTiles(move : Int, jump : Int, vsel : BoardLocation) {
+    val boardx = vsel.getBoardX
+    val boardy = vsel.getBoardY
+    
+    if (move>0){
+      // jumping down/walking code
+      
+      // boundary condition, reduce drop height if at edge of screen
+      var jumplimD = jump+1    
+	  if (boardy+jump+1 >= board.getBoardHeight){
+	    jumplimD = board.getBoardHeight-boardy-1;
+	  }
+      var blockFoundL = false
+      var blockFoundR = false
+      // check each block to the sides of the unit and
+      // below the unit on those same sides
+      for (i <- 0 to jumplimD){
+        if (!blockFoundL){
+          val nextlocL = board.getBoardLocation(boardx-1,boardy+i)
+          // if we encounter a block
+          if (!nextlocL.isPassable){
+            blockFoundL = true
+            /** Make sure we don't say block above ground level is valid;
+             * we don't know that unless we check the jumping up condition.
+             * Also, check if we have found a shorter path to this vertex/
+             * haven't explored this vertex already if it IS valid
+             */
+            if (i != 0 &&
+               ((parent(nextlocL.getBoardY-1))(nextlocL.getBoardX))(2) < move){
+		       (parent(boardy+i-1))(boardx-1) = Array(boardx,boardy,move)
+               groundMoveTiles(move-1,jump,board.getBoardLocation(boardx-1,boardy+i-1));
+            }
+          }
+        }
+        // same thing on the right hand side; might make this into a method later
+        if (!blockFoundR){
+          val nextlocR = board.getBoardLocation(boardx+1,boardy+i)
+          if (!nextlocR.isPassable){
+            blockFoundR = true
+            if (i != 0 &&
+               ((parent(nextlocR.getBoardY-1))(nextlocR.getBoardX))(2) < move){
+		       (parent(boardy+i-1))(boardx+1) = Array(boardx,boardy,move)
+               groundMoveTiles(move-1,jump,board.getBoardLocation(boardx+1,boardy+i-1));
+            }
+          }
+        }
+      }
+      
+	  // jumping upwards code
+      
+      // boundary condition for the top border
+	  var jumplimU = jump
+	  if (boardy-jump < 0){
+	    jumplimU = boardy
+	  }
+	  for(j <- 0 until jumplimU){
+	    // start with left side
+	    // here, nextlocL is the actual square that we want to move to
+	    val nextlocL = board.getBoardLocation(boardx-1,boardy-j-1)
+	    // check each space above space to left of selected space
+	    // if both empty and there's a block under
+	    if (nextlocL.isPassable && !board.getBoardLocation(boardx-1,boardy-j).isPassable){
+	      var jumpable:Boolean = true;
+	      // check that the column above unit is empty up to jumpable position
+	      for (k <- 1 to nextlocL.getBoardY){
+	        if(!board.getBoardLocation(boardx,boardy-k).isPassable){
+	          jumpable = false;
+	        }
+	      }
+	      if (jumpable && ((parent(nextlocL.getBoardY))(nextlocL.getBoardX))(2) < move){
+	        (parent(boardy-j-1))(boardx-1) = Array(boardx,boardy,move)
+	        groundMoveTiles(move-1,jump,nextlocL);
+	      }
+	    }
+	    // right side
+	    // here, nextlocR is the actual square that we want to move to
+	    val nextlocR = board.getBoardLocation(boardx+1,boardy-j-1)
+	    if (nextlocR.isPassable && !board.getBoardLocation(boardx+1,boardy-j).isPassable){
+	      var jumpable:Boolean = true;
+	      for (k <- 1 to nextlocR.getBoardY){
+	        if(!board.getBoardLocation(boardx,boardy-k).isPassable){
+	          jumpable = false;
+	        }
+	      }
+	      if (jumpable && ((parent(nextlocR.getBoardY))(nextlocR.getBoardX))(2) < move){
+	        (parent(boardy-j-1))(boardx+1) = Array(boardx,boardy,move)
+	        groundMoveTiles(move-1,jump,nextlocR);
+	      }
+	    }
+	  }
     }
   }
   
