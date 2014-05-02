@@ -43,11 +43,11 @@ abstract class CharacterUnit extends Sprite{
       jumpheight;
     }
     
-    /** unit attacks depending on the weapon given
+    /** unit uses item given index
      * 
      */
-    def attack(w : Weapon){
-      
+    def useItem(index: Int){
+      weapons(index)
     }
     
     /** sets the unit's direction; true is right while left is false.

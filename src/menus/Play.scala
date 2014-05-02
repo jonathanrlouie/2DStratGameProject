@@ -13,14 +13,20 @@ class Play(state : Int) extends BasicGameState{
   //placeholder
   val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife)))
   
-  var board : Board = new Board(units,12,7,"GEEEEaEEEEEG"+
-  								   		   "GEEESSESEEEG"+
-  										   "SEESEEEEEEES"+
-  										   "SEEEEESEEEES"+
-  						 			       "SEEEEEEEEEES"+
-  										   "SEEESSSEEEES"+
+  var board : Board = new Board(units,12,9,"GEEGEEEEEEEG"+
+  								   		   "GEGEEEESEEEG"+
+  										   "SEEESEEEESES"+
+  										   "SESEEEEEEEES"+
+  										   "SEEEEEEEEEES"+
+  										   "SEEEEEEEEEES"+
+  						 			       "SEEEEESEEEES"+
+  										   "SEEEEaSEEEES"+
   										   "SSSSSSSSSSSS")
   
+  var camera = new Array[Int](2)
+  var relativeCamera = new Array[Int](2)
+  val cameraWidth = 8
+  val cameraHeight = 8
   var unitSel: CharacterUnit = units(0)
   var parent = Array.fill[Int](board.getBoardHeight,board.getBoardWidth,3){-100}
   
@@ -34,44 +40,52 @@ class Play(state : Int) extends BasicGameState{
   
   override def init(gc:GameContainer, sbg : StateBasedGame){
     board.createBoard
+    // start camera at top left of board
+    camera(0) = 0
+    camera(1) = 0
+    relativeCamera(0) = 0
+    relativeCamera(1) = 0
   }
   
   override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics){
     renderBoard(g)
-    
-    // temporary way to render moveable tiles
-    if (unitSel.getSelected == 1){
-      g.setColor(Color.red)
-      for(i <- 0 until board.getBoardHeight){
-        for (j <- 0 until board.getBoardWidth){
-          if (((parent(i))(j))(0) != -100) {
-            
-            g.drawRect(j*spriteSize,i*spriteSize,spriteSize-1,spriteSize-1)
-          }
-        }
-      }
+      
+    if (unitSel.getSelected > 0){
+	  // temporary way to render tiles unit can move to
+	  if (unitSel.getSelected == 1){
+	    g.setColor(Color.red)
+	    for(i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
+	      val bl : BoardLocation = board.getBoardLocation(i,j)
+	      if (((parent(bl.getBoardY))(bl.getBoardX))(0) != -100) {         
+	        g.drawRect((i-camera(0))*spriteSize,(j-camera(1))*spriteSize,spriteSize-1,spriteSize-1)
+	      }
+	    }
+	  }
+	  
+	  if (unitSel.getSelected == 2){
+	    val xcoord = unitSel.getX
+	    val ycoord = unitSel.getY
+         
+	    //placeholder
+	    g.setColor(Color.black)
+	    g.drawRect(220,0,40*5,40)
+	    val weps = unitSel.getWeapons
+	    g.setColor(Color.green)
+	    g.drawRect(40*unitSel.getSelectedWep+220,0,40,40)
+	    for (i <- 0 until 5){
+	      //if (weps(i) != null){
+	        new Image("res/" + /*weps(i).getName*/ "Grass" + ".png").draw(spriteSize*i+221,1)
+	      //}
+	    }
+	  }
     }
-    
-    if (unitSel.getSelected == 2){
-      val xcoord = unitSel.getX
-      val ycoord = unitSel.getY
-          
-      //placeholder
-      g.setColor(Color.black)
-      g.drawRect(220,0,40*5,40)
-      val weps = unitSel.getWeapons
-      g.setColor(Color.green)
-      g.drawRect(40*unitSel.getSelectedWep+220,0,40,40)
-      for (i <- 0 until 5){
-        //if (weps(i) != null){
-          new Image("res/" + /*weps(i).getName*/ "Grass" + ".png").draw(spriteSize*i+221,1)
-        //}
-      }
-    }
-    
+	
+    drawCursor(g);
+  }
+  
+  def drawCursor(g : Graphics): Unit = {
     g.setColor(Color.yellow)
-    g.drawRect(board.getCursor(0)*spriteSize,board.getCursor(1)*spriteSize,spriteSize-1,spriteSize-1)
-    
+    g.drawRect(relativeCamera(0)*spriteSize,relativeCamera(1)*spriteSize,spriteSize-1,spriteSize-1)
   }
   
   override def update(gc:GameContainer, sbg : StateBasedGame, delta : Int){
@@ -84,21 +98,41 @@ class Play(state : Int) extends BasicGameState{
       if (input.isKeyPressed(Keyboard.KEY_LEFT)){
         if (cursorX > 0){
           board.setCursor(cursorX-1,cursorY)
+          if (relativeCamera(0) > 0){
+            relativeCamera(0) -= 1
+          } else {
+            camera(0) -= 1
+          }
         }
       }
       else if (input.isKeyPressed(Keyboard.KEY_RIGHT)){
         if (cursorX < board.getBoardWidth-1){
           board.setCursor(cursorX+1,cursorY)
+          if (relativeCamera(0) < cameraWidth){
+            relativeCamera(0) += 1
+          } else {
+            camera(0) += 1
+          }
         }
       }
       else if (input.isKeyPressed(Keyboard.KEY_DOWN)){
         if (cursorY < board.getBoardHeight-1){
           board.setCursor(cursorX,cursorY+1)
+          if (relativeCamera(1) < cameraHeight){
+            relativeCamera(1) += 1
+          } else {
+            camera(1) += 1
+          }
         }
       }
       else if (input.isKeyPressed(Keyboard.KEY_UP)){
         if (cursorY > 0){
           board.setCursor(cursorX,cursorY-1)
+          if (relativeCamera(1) > 0){
+            relativeCamera(1) -= 1
+          } else {
+            camera(1) -= 1
+          }
         }
       }
       // press X to enter weapon selection
@@ -172,9 +206,10 @@ class Play(state : Int) extends BasicGameState{
       // jumping down/walking code
       
       // boundary condition, reduce drop height if at edge of screen
-      var jumplimD = jump+1    
-	  if (boardy+jump+1 >= board.getBoardHeight){
-	    jumplimD = board.getBoardHeight-boardy-1;
+	  val jumplimD = if (boardy+jump+1 >= board.getBoardHeight){
+	    board.getBoardHeight-boardy-1;
+	  } else {
+	    jump+1
 	  }
       var blockFoundL = false
       var blockFoundR = false
@@ -215,9 +250,10 @@ class Play(state : Int) extends BasicGameState{
 	  // jumping upwards code
       
       // boundary condition for the top border
-	  var jumplimU = jump
-	  if (boardy-jump < 0){
-	    jumplimU = boardy
+	  val jumplimU = if (boardy-jump < 0){
+	    boardy
+	  } else {
+	    jump
 	  }
 	  for(j <- 0 until jumplimU){
 	    // start with left side
@@ -260,21 +296,19 @@ class Play(state : Int) extends BasicGameState{
   def renderBoard(g: Graphics){
     val backgroundimg : Image = new Image("res/Background.png")
     backgroundimg.draw(0,0)
-    for (i <- 0 until board.getBoardWidth){
-      for (j <- 0 until board.getBoardHeight){
-        val bl : BoardLocation = board.getBoardLocation(i,j)
-        //might need to change this later, not sure
-        if (bl.hasSprite){
-          val blspr = bl.getSprite
-          if (blspr.isInstanceOf[Block]){
-            val img : Image = new Image("res/" + blspr.getName + ".png")
-            img.draw(spriteSize*i,spriteSize*j)
-          } 
-          else if (blspr.isInstanceOf[CharacterUnit]){
-            //obvious placeholder
-            g.setColor(Color.green)
-            g.drawRect(blspr.asInstanceOf[CharacterUnit].getX,blspr.asInstanceOf[CharacterUnit].getY,39,39)
-          }
+    for (i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
+      val bl : BoardLocation = board.getBoardLocation(i,j)
+      //might need to change this later, not sure
+      if (bl.hasSprite){
+        val blspr = bl.getSprite
+        if (blspr.isInstanceOf[Block]){
+          val img : Image = new Image("res/" + blspr.getName + ".png")
+          img.draw(spriteSize*(i-camera(0)),spriteSize*(j-camera(1)))
+        } 
+        else if (blspr.isInstanceOf[CharacterUnit]){
+          //obvious placeholder
+          g.setColor(Color.green)
+          g.drawRect(spriteSize*(i-camera(0)),spriteSize*(j-camera(1)),39,39)
         }
       }
     }
