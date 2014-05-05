@@ -5,13 +5,16 @@ import org.lwjgl.input.Keyboard
 import org.newdawn.slick._
 import org.newdawn.slick.state._
 import game._
-import scala.util.control.Breaks._
 import scala.Array
 
 class Play(state : Int) extends BasicGameState{
   val spriteSize = 40
+  // number of kills a team needs to win the game
+  val scoreLimit = 20
+  val teams = Array[Team](new Team, new Team)
+  
   //placeholder
-  val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife)))
+  val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife),teams(0)))
   
   var board : Board = new Board(units,12,9,"GEEGEEEEEEEG"+
   								   		   "GEGEEEESEEEG"+
@@ -40,6 +43,8 @@ class Play(state : Int) extends BasicGameState{
   
   override def init(gc:GameContainer, sbg : StateBasedGame){
     board.createBoard
+    // temporary; just need to initialize the board variable for all units
+    units(0).setBoard(board)
     // start camera at top left of board
     camera(0) = 0
     camera(1) = 0
@@ -138,12 +143,12 @@ class Play(state : Int) extends BasicGameState{
       // press X to enter weapon selection
       else if (input.isKeyPressed(Keyboard.KEY_X)){
         val boardloc = board.getBoardLocation(cursorX,cursorY)
-        if (boardloc.hasSprite){
-          if (boardloc.getSprite.isInstanceOf[CharacterUnit]){
-            unitSel = boardloc.getSprite.asInstanceOf[CharacterUnit]
-            boardloc.getSprite.asInstanceOf[CharacterUnit].setSelected(2)
-          }
-        }
+	    if (boardloc.hasSprite){
+	      if (boardloc.getSprite.isInstanceOf[CharacterUnit]){
+	        unitSel = boardloc.getSprite.asInstanceOf[CharacterUnit]
+	        boardloc.getSprite.asInstanceOf[CharacterUnit].setSelected(2)
+	      }
+	    }
       }
       // press Z to move selected unit
       else if (input.isKeyPressed(Keyboard.KEY_Z)){
@@ -158,7 +163,6 @@ class Play(state : Int) extends BasicGameState{
     }
     // if selected for movement
     else if (unitSel.getSelected == 1){
-      // oh man it gets really crazy from here
       val boardWidth = board.getBoardWidth
       val boardHeight = board.getBoardHeight
       val move = unitSel.getMove;
@@ -183,13 +187,15 @@ class Play(state : Int) extends BasicGameState{
           unitSel.setSelectedWep(unitSel.getSelectedWep-1)
         }
       }
+      else if (input.isKeyPressed(Keyboard.KEY_X)){
+        unitSel.useItem(unitSel.getSelectedWep)
+        if (unitSel.getTeam.getScore == scoreLimit){
+          gameWin(unitSel.getTeamNum)
+        }
+      }
       // cancel an attack
       else if (input.isKeyPressed(Keyboard.KEY_S)){
         unitSel.setSelected(0);
-      }
-      // confirmation button; attack with selected wep
-      else if (input.isKeyPressed(Keyboard.KEY_C)){
-        // implement weapon attacking here
       }
     }
   }
@@ -291,6 +297,10 @@ class Play(state : Int) extends BasicGameState{
 	    }
 	  }
     }
+  }
+  
+  def gameWin(teamNum: Int){
+    //TODO
   }
   
   def renderBoard(g: Graphics){

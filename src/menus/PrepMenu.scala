@@ -111,7 +111,8 @@ class PrepMenu(state : Int) extends BasicGameState{
     
     clselected match{
       case 1 =>  if (mouseInArea(50,133,80,33) && input.isMouseButtonDown(0)){
-        units(unitselected) = new Knight(Array[Weapon](new Knife))
+        // TODO; need a better solution than creating units here
+        //units(unitselected) = new Knight(Array[Weapon](new Knife), new Team, new Board)
       }
       case _ =>
     }

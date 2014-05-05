@@ -1,7 +1,7 @@
 package game
 
-class Knife extends Weapon{
-  attackPwr = 3
+class Knife extends MeleeWeapon{
+  override val attackPwr = 3
   durability = -1
   override val name = "Knife"
 }

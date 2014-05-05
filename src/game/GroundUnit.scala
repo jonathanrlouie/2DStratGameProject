@@ -1,5 +1,5 @@
 package game
 
-abstract class GroundUnit extends CharacterUnit{
+abstract class GroundUnit(weps: Array[Weapon], teamObj: Team) extends CharacterUnit(weps, teamObj){
 
 }

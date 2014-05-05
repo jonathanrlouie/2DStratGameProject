@@ -1,21 +1,29 @@
 package game
 
-abstract class CharacterUnit extends Sprite{
-    var team : Int = 0
+abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
+    val team = teamObj
+    @scala.reflect.BeanProperty
+    var board: Board = _
+    @scala.reflect.BeanProperty
+	var teamNum : Int = 0
     // board x and y are the x and y on the board
     var boardx : Int = 0
     var boardy : Int = 0
     // xcoord and ycoord are the absolute x and y in pixels
     var xcoord : Int = 0
     var ycoord : Int = 0
-    var hp_max : Int = 0
+    val hp_max : Int
+    @scala.reflect.BeanProperty
+    var atkMod : Int = 0
+    @scala.reflect.BeanProperty
     var hp : Int = 0
+    @scala.reflect.BeanProperty
+    var dead: Boolean = false
 	var movespeed : Int = 0
 	// the actual number of tiles a unit can move
 	var movement : Int = 0
 	var jumpheight : Int = 0
-	var board : Board = _
-	var weapons = new Array[Weapon](5)
+	var weapons = weps
 	var selectedWeapon : Int = 0
 	var faceR : Boolean = false
 	
@@ -33,6 +41,10 @@ abstract class CharacterUnit extends Sprite{
 	  
 	}
     
+    def incScore{
+      team.setScore(team.getScore+1)
+    }
+    
     // retrieve the movement of a unit
     def getMove : Int = {
       movement;
@@ -43,11 +55,15 @@ abstract class CharacterUnit extends Sprite{
       jumpheight;
     }
     
+    def die{
+      
+    }
+    
     /** unit uses item given index
      * 
      */
     def useItem(index: Int){
-      weapons(index)
+      weapons(index).attack(this,board)
     }
     
     /** sets the unit's direction; true is right while left is false.
@@ -60,9 +76,7 @@ abstract class CharacterUnit extends Sprite{
       faceR = b
     }
     
-    def getTeamNum : Int = {
-      team
-    }
+    def isFacingRight: Boolean = faceR
 	
     // get actual coords in pixels
     def getX : Int = xcoord
@@ -76,19 +90,6 @@ abstract class CharacterUnit extends Sprite{
     def getSelected: Int = selected
     def getWeapons: Array[Weapon] = weapons
     
-    def setHp(maxhp : Int){
-      hp_max = maxhp
-      hp = maxhp
-    }
-    
-    def setTeam(teamnum : Int){
-      team = teamnum
-    }
-    
-    def setBoard(b:Board){
-      board = b
-    }
-    
     // set absolute x and y in pixels
     def setXandY(x: Int, y: Int){
       xcoord = x
@@ -100,6 +101,8 @@ abstract class CharacterUnit extends Sprite{
       boardx = x;
       boardy = y;
     }
+    
+    def getTeam: Team = team
     
     def setSelected(sel : Int){
       selected = sel
