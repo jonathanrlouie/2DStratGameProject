@@ -30,6 +30,11 @@ class Play(state : Int) extends BasicGameState{
   
   var camera = new Array[Int](2)
   var relativeCamera = new Array[Int](2)
+  
+  // restore camera position
+  var restoreCamera = new Array[Int](2)
+  var restoreRelCamera = new Array[Int](2)
+  
   val cameraWidth = 8
   val cameraHeight = 8
   
@@ -201,6 +206,7 @@ class Play(state : Int) extends BasicGameState{
       } else if (moveSelectOn){
         moveSelectOn = false
         unitOptionsOpen = true
+        restorePosition
       }
     }
     // press Z to select unit and perform actions
@@ -211,6 +217,8 @@ class Play(state : Int) extends BasicGameState{
         if (boardLocSpr.isInstanceOf[CharacterUnit] && boardLocSpr.asInstanceOf[CharacterUnit].getTeamNum == currentTeam){
           unitOptionsOpen = true
           unitSel = boardLocSpr.asInstanceOf[CharacterUnit]
+          restoreCamera = camera.clone
+          restoreRelCamera = relativeCamera.clone
         }
       } else {
         if (unitOptionsOpen){
@@ -353,6 +361,12 @@ class Play(state : Int) extends BasicGameState{
 	    }
 	  }
     }
+  }
+  
+  def restorePosition{
+    camera = restoreCamera.clone
+    relativeCamera = restoreRelCamera.clone
+    board.setCursor(unitSel.getBoardX,unitSel.getBoardY)
   }
   
   def gameWin(teamNum: Int){
