@@ -25,11 +25,22 @@ class Play(state : Int) extends BasicGameState{
   						 			       "SEEEEESEEEES"+
   										   "SEEEEaSEEEES"+
   										   "SSSSSSSSSSSS")
+  // the team who's turn it currently is
+  var currentTeam = 0
   
   var camera = new Array[Int](2)
   var relativeCamera = new Array[Int](2)
   val cameraWidth = 8
   val cameraHeight = 8
+  
+  // whether unit's options menu is open (move, use item, turn around)
+  var unitOptionsOpen = false
+  var unitOption = 0
+  // whether unit's weapon menu is open
+  var weaponMenuOpen = false
+  // whether movement tiles for a unit exist on the board or not
+  var moveSelectOn = false
+  
   var unitSel: CharacterUnit = units(0)
   var parent = Array.fill[Int](board.getBoardHeight,board.getBoardWidth,3){-100}
   
@@ -55,33 +66,41 @@ class Play(state : Int) extends BasicGameState{
   override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics){
     renderBoard(g)
       
-    if (unitSel.getSelected > 0){
-	  // temporary way to render tiles unit can move to
-	  if (unitSel.getSelected == 1){
-	    g.setColor(Color.red)
-	    for(i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
-	      val bl : BoardLocation = board.getBoardLocation(i,j)
-	      if (((parent(bl.getBoardY))(bl.getBoardX))(0) != -100) {         
-	        g.drawRect((i-camera(0))*spriteSize,(j-camera(1))*spriteSize,spriteSize-1,spriteSize-1)
-	      }
+    if (unitOptionsOpen){
+      g.setColor(Color.black)
+      g.drawRect(220,0,196,3*42+1)
+      new Image("res/MovePanel.png").draw(221,1)
+      new Image("res/ItemPanel.png").draw(221,43)
+      new Image("res/TurnPanel.png").draw(221,85)
+      g.setColor(Color.yellow)
+      g.drawRect(221,unitOption*42,194,42)
+    }
+    
+	// temporary way to render tiles unit can move to
+	if (moveSelectOn){
+	  g.setColor(Color.red)
+	  for(i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
+	    val bl : BoardLocation = board.getBoardLocation(i,j)
+	    if (((parent(bl.getBoardY))(bl.getBoardX))(0) != -100) {         
+	      g.drawRect((i-camera(0))*spriteSize,(j-camera(1))*spriteSize,spriteSize-1,spriteSize-1)
 	    }
 	  }
+	}
 	  
-	  if (unitSel.getSelected == 2){
-	    val xcoord = unitSel.getX
-	    val ycoord = unitSel.getY
-         
-	    //placeholder
-	    g.setColor(Color.black)
-	    g.drawRect(220,0,40*5,40)
-	    val weps = unitSel.getWeapons
-	    g.setColor(Color.green)
-	    g.drawRect(40*unitSel.getSelectedWep+220,0,40,40)
-	    for (i <- 0 until 5){
-	      //if (weps(i) != null){
-	        new Image("res/" + /*weps(i).getName*/ "Grass" + ".png").draw(spriteSize*i+221,1)
-	      //}
-	    }
+	if (weaponMenuOpen){
+	  val xcoord = unitSel.getX
+	  val ycoord = unitSel.getY
+        
+	  // TODO; placeholder
+	  g.setColor(Color.black)
+	  g.drawRect(220,0,40*5,40)
+	  val weps = unitSel.getWeapons
+	  g.setColor(Color.green)
+	  g.drawRect(40*unitSel.getSelectedWep+220,0,40,40)
+	  for (i <- 0 until 5){
+	    //if (weps(i) != null){
+	      new Image("res/" + /*weps(i).getName*/ "Grass" + ".png").draw(spriteSize*i+221,1)
+	    //}	  
 	  }
     }
 	
@@ -98,104 +117,141 @@ class Play(state : Int) extends BasicGameState{
     val cursorX = board.getCursor(0)
     val cursorY = board.getCursor(1)
     
-    // unit unselected
-    if (unitSel.getSelected == 0){
-      if (input.isKeyPressed(Keyboard.KEY_LEFT)){
-        if (cursorX > 0){
-          board.setCursor(cursorX-1,cursorY)
-          if (relativeCamera(0) > 0){
-            relativeCamera(0) -= 1
-          } else {
-            camera(0) -= 1
+    if (input.isKeyPressed(Keyboard.KEY_LEFT)){
+      if (!unitOptionsOpen){
+        if (weaponMenuOpen){
+          if (unitSel.getSelectedWep > 0){
+            unitSel.setSelectedWep(unitSel.getSelectedWep-1)
           }
-        }
-      }
-      else if (input.isKeyPressed(Keyboard.KEY_RIGHT)){
-        if (cursorX < board.getBoardWidth-1){
-          board.setCursor(cursorX+1,cursorY)
-          if (relativeCamera(0) < cameraWidth){
-            relativeCamera(0) += 1
-          } else {
-            camera(0) += 1
-          }
-        }
-      }
-      else if (input.isKeyPressed(Keyboard.KEY_DOWN)){
-        if (cursorY < board.getBoardHeight-1){
-          board.setCursor(cursorX,cursorY+1)
-          if (relativeCamera(1) < cameraHeight){
-            relativeCamera(1) += 1
-          } else {
-            camera(1) += 1
-          }
-        }
-      }
-      else if (input.isKeyPressed(Keyboard.KEY_UP)){
-        if (cursorY > 0){
-          board.setCursor(cursorX,cursorY-1)
-          if (relativeCamera(1) > 0){
-            relativeCamera(1) -= 1
-          } else {
-            camera(1) -= 1
-          }
-        }
-      }
-      // press X to enter weapon selection
-      else if (input.isKeyPressed(Keyboard.KEY_X)){
-        val boardloc = board.getBoardLocation(cursorX,cursorY)
-	    if (boardloc.hasSprite){
-	      if (boardloc.getSprite.isInstanceOf[CharacterUnit]){
-	        unitSel = boardloc.getSprite.asInstanceOf[CharacterUnit]
-	        boardloc.getSprite.asInstanceOf[CharacterUnit].setSelected(2)
-	      }
-	    }
-      }
-      // press Z to move selected unit
-      else if (input.isKeyPressed(Keyboard.KEY_Z)){
-        val boardloc = board.getBoardLocation(cursorX,cursorY)
-        if (boardloc.hasSprite){
-          if (boardloc.getSprite.isInstanceOf[CharacterUnit]){
-            unitSel = boardloc.getSprite.asInstanceOf[CharacterUnit]
-            boardloc.getSprite.asInstanceOf[CharacterUnit].setSelected(1)
+        } else {
+          if (cursorX > 0){
+            board.setCursor(cursorX-1,cursorY)
+            if (relativeCamera(0) > 0){
+              relativeCamera(0) -= 1
+            } else {
+              camera(0) -= 1
+            }
           }
         }
       }
     }
-    // if selected for movement
-    else if (unitSel.getSelected == 1){
-      val boardWidth = board.getBoardWidth
-      val boardHeight = board.getBoardHeight
-      val move = unitSel.getMove;
-      val jump = unitSel.getJump;
-      if (unitSel.isInstanceOf[AirUnit]){
-        // TODO
+    else if (input.isKeyPressed(Keyboard.KEY_RIGHT)){
+      if (!unitOptionsOpen){
+        if (weaponMenuOpen){
+          if (unitSel.getSelectedWep < 4){
+            unitSel.setSelectedWep(unitSel.getSelectedWep+1)
+          }
+        } else {
+          if (cursorX < board.getBoardWidth-1){
+            board.setCursor(cursorX+1,cursorY)
+            if (relativeCamera(0) < cameraWidth){
+              relativeCamera(0) += 1
+            } else {
+              camera(0) += 1
+            }
+          }
+        }
+      }
+    }
+    else if (input.isKeyPressed(Keyboard.KEY_DOWN)){
+      if (!weaponMenuOpen){
+        if (unitOptionsOpen){
+          if (unitOption < 2){
+            unitOption += 1
+          }
+        } else {
+	      if (cursorY < board.getBoardHeight-1){
+	        board.setCursor(cursorX,cursorY+1)
+	        if (relativeCamera(1) < cameraHeight){
+	          relativeCamera(1) += 1
+	        } else {
+	          camera(1) += 1
+	        }
+	      }  
+        }
+      }
+    }
+    else if (input.isKeyPressed(Keyboard.KEY_UP)){
+      if (!weaponMenuOpen){
+        if (unitOptionsOpen){
+          if (unitOption > 0){
+            unitOption -= 1
+          }
+        }
+        else { 
+          if (cursorY > 0){
+            board.setCursor(cursorX,cursorY-1)
+            if (relativeCamera(1) > 0){
+              relativeCamera(1) -= 1
+            } else {
+              camera(1) -= 1
+            }
+          }
+        }
+      }
+    }
+    // press X to exit a menu
+    else if (input.isKeyPressed(Keyboard.KEY_X)){
+      if (unitOptionsOpen){
+        unitOption = 0
+        unitOptionsOpen = false
+      } else if (weaponMenuOpen){
+        weaponMenuOpen = false
+        unitOptionsOpen = true
+      } else if (moveSelectOn){
+        moveSelectOn = false
+        unitOptionsOpen = true
+      }
+    }
+    // press Z to select unit and perform actions
+    else if (input.isKeyPressed(Keyboard.KEY_Z)){
+      val boardLoc = board.getBoardLocation(cursorX,cursorY)
+      val boardLocSpr = boardLoc.getSprite
+      if (!unitOptionsOpen && !weaponMenuOpen && !moveSelectOn){
+        if (boardLocSpr.isInstanceOf[CharacterUnit] && boardLocSpr.asInstanceOf[CharacterUnit].getTeamNum == currentTeam){
+          unitOptionsOpen = true
+          unitSel = boardLocSpr.asInstanceOf[CharacterUnit]
+        }
       } else {
-        // generate the valid movement locations for a unit given its move, jump, and initial board location
-        (parent(unitSel.getBoardY))(unitSel.getBoardX) = Array(unitSel.getBoardX,unitSel.getBoardY,move+1);
-        groundMoveTiles(move,jump,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
-      }
-    }
-    // if selecting a weapon
-    else if (unitSel.getSelected == 2){
-      if (input.isKeyPressed(Keyboard.KEY_RIGHT)){
-        if (unitSel.getSelectedWep < 4){
-          unitSel.setSelectedWep(unitSel.getSelectedWep+1)
+        if (unitOptionsOpen){
+          unitOptionsOpen = false
+          if (unitOption == 0){
+            val boardWidth = board.getBoardWidth
+	        val boardHeight = board.getBoardHeight
+	        val move = unitSel.getMove;
+	        val jump = unitSel.getJump;
+	        if (unitSel.isInstanceOf[AirUnit]){
+              // TODO
+	        } else {
+	          // generate the valid movement locations for a unit given its move, jump, and initial board location
+	          (parent(unitSel.getBoardY))(unitSel.getBoardX) = Array(unitSel.getBoardX,unitSel.getBoardY,move+1);
+              groundMoveTiles(move,jump,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
+	        }
+	        moveSelectOn = true
+          } else if (unitOption == 1){
+            weaponMenuOpen = true
+          } else {
+            if (unitSel.isFacingRight){
+              unitSel.faceRight(false)
+            } else {
+              unitSel.faceRight(true)
+            }
+          }
+          unitOption = 0
         }
-      }
-      else if (input.isKeyPressed(Keyboard.KEY_LEFT)){
-        if (unitSel.getSelectedWep > 0){
-          unitSel.setSelectedWep(unitSel.getSelectedWep-1)
+        else if (moveSelectOn){
+          // temporary until I fix groundMoveTiles' algorithm
+          if (((parent(cursorY))(cursorX))(0) != -100){
+            board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY).removeSprite
+	        board.getBoardLocation(cursorX,cursorY).addSprite(unitSel)
+          }
+	    }
+        else if (weaponMenuOpen){
+          unitSel.useItem(unitSel.getSelectedWep)
+          if (unitSel.getTeam.getScore == scoreLimit){
+            gameWin(unitSel.getTeamNum)
+          }
         }
-      }
-      else if (input.isKeyPressed(Keyboard.KEY_X)){
-        unitSel.useItem(unitSel.getSelectedWep)
-        if (unitSel.getTeam.getScore == scoreLimit){
-          gameWin(unitSel.getTeamNum)
-        }
-      }
-      // cancel an attack
-      else if (input.isKeyPressed(Keyboard.KEY_S)){
-        unitSel.setSelected(0);
       }
     }
   }

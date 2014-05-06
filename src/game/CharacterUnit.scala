@@ -27,13 +27,6 @@ abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
 	var selectedWeapon : Int = 0
 	var faceR : Boolean = false
 	
-	/** type of selection:
-	 *  0 = unselected
-	 *  1 = selected for movement
-	 *  2 = selecting weapon
-	 */
-	var selected : Int = 0
-	
 	/** moves the unit to the specified tile space if valid
 	 * 
 	 */
@@ -72,7 +65,7 @@ abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
      * MODIFIES: this
      * EFFECTS: makes the unit face left or right
      */
-    def faceDir(b:Boolean){
+    def faceRight(b:Boolean){
       faceR = b
     }
     
@@ -87,7 +80,6 @@ abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
     def getBoardY: Int = boardy    
     
     def getSelectedWep: Int = selectedWeapon
-    def getSelected: Int = selected
     def getWeapons: Array[Weapon] = weapons
     
     // set absolute x and y in pixels
@@ -103,10 +95,6 @@ abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
     }
     
     def getTeam: Team = team
-    
-    def setSelected(sel : Int){
-      selected = sel
-    }
     
     def setSelectedWep(sel : Int){
       selectedWeapon = sel

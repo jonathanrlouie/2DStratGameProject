@@ -6,7 +6,7 @@ class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
   val boardy = y
   val spriteSize = 40
   
-  var sprite : Sprite = _
+  var sprite : Sprite = null
   
   tile match {
     case 'W' => isWall = true
@@ -33,8 +33,6 @@ class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
     !isWall
   }
   
-  // this needs to change, null isn't useful in scala
-  // TODO
   def hasSprite : Boolean = {
     sprite != null
   }
@@ -43,6 +41,10 @@ class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
   
   def addSprite(spr : Sprite) {
     sprite = spr
+  }
+  
+  def removeSprite{
+    sprite = null
   }
   
   // get the board coordinates of this board location

@@ -15,6 +15,13 @@ trait MeleeWeapon extends Weapon{
 			  unit.incScore
 			}
 		}
-		println("whack!")
+		if (durability > 0){
+		  durability -= 1
+		}
+		if (durability == 0){
+			println("weapon broke!")
+		} else {
+			println("whack!")
+		}
 	}
 }
