@@ -109,12 +109,11 @@ class Play(state : Int) extends BasicGameState{
 	  }
     }
 	
-    drawCursor(g);
+    drawCursor
   }
   
-  def drawCursor(g : Graphics): Unit = {
-    g.setColor(Color.yellow)
-    g.drawRect(relativeCamera(0)*spriteSize,relativeCamera(1)*spriteSize,spriteSize-1,spriteSize-1)
+  def drawCursor: Unit = {
+    new Image("res/Cursor.png").draw(relativeCamera(0)*spriteSize,relativeCamera(1)*spriteSize)
   }
   
   override def update(gc:GameContainer, sbg : StateBasedGame, delta : Int){
