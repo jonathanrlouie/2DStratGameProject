@@ -17,16 +17,16 @@ class Play(state : Int) extends BasicGameState{
   val teams = Array[Team](new Team, new Team)
   
   //placeholder
-  val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife,null,null),teams(0)))
+  val units = Array[CharacterUnit](new HeliPilot(Array[Weapon](new Knife,null,null),teams(0)))
   
   var board : Board = new Board(units,12,9,"GEEGEEEEEEEG"+
-  								   		   "GEGEEESEEEEG"+
-  										   "SEEEESEEESES"+
+  								   		   "GEGEEEEEEEEG"+
+  										   "SEEEEEEEESES"+
   										   "SESEEEEEEEES"+
-  										   "SEEESESEEEES"+
-  										   "SEEEEaEEEEES"+
-  						 			       "SESEESESSSES"+
-  										   "SESESESSSEES"+
+  										   "SEEEEEaEEEES"+
+  										   "SEEEEEEEEEES"+
+  						 			       "SESSEEEEESES"+
+  										   "SESESEESSEES"+
   										   "SSSSSSSSSSSS")
   // the team who's turn it currently is
   var currentTeam = 0
@@ -237,10 +237,10 @@ class Play(state : Int) extends BasicGameState{
 	        parent(unitSel.getBoardY)(unitSel.getBoardX) = Array(unitSel.getBoardX,unitSel.getBoardY,move+1);
 	        if (unitSel.isInstanceOf[AirUnit]){
               // generate the valid movement locations for an air unit given its movement and initial board location
-	          airMoveTiles(move,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
+	          genAirMoveTiles(move,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
 	        } else {
 	          // generate the valid movement locations for a ground unit given its move, jump, and initial board location
-              groundMoveTiles(move,jump,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
+              genGroundMoveTiles(move,jump,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
 	        }
 	        moveSelectOn = true
           } else if (unitOption == 1){
@@ -289,19 +289,43 @@ class Play(state : Int) extends BasicGameState{
   }
   
   
-  /** finds the valid locations on the board that selected
+  /** generates the valid locations on the board that selected
    *  air unit can move to immediately
    *  and recurses until the unit is out of movement points
    */
-  def airMoveTiles(move: Int, vsel: BoardLocation){
-    //TODO
+  def genAirMoveTiles(move: Int, vsel: BoardLocation){
+    val boardx = vsel.getBoardX
+    val boardy = vsel.getBoardY
+    
+    if (move>0){
+      calcValidAirSpaces(1,0,boardx,boardy,move)
+      calcValidAirSpaces(0,1,boardx,boardy,move)
+      calcValidAirSpaces(-1,0,boardx,boardy,move)
+      calcValidAirSpaces(0,-1,boardx,boardy,move)
+    }
+    
   }
   
-  /** finds the valid locations on the board that selected
+  // calculate valid moveable tiles for air units
+  // xdir is 1 for tile on right (ydir = 0) 
+  // xdir is -1 for tile on the left (ydir = 0)
+  // ydir is 1 for tile below (xdir = 0)
+  // ydir is -1 for tile above (xdir = 0)
+  def calcValidAirSpaces(xdir: Int, ydir: Int, boardx: Int, boardy: Int, move: Int){
+    val nextLoc = board.getBoardLocation(boardx+xdir,boardy+ydir)
+    if (nextLoc.isPassable){
+      if (parent(nextLoc.getBoardY)(nextLoc.getBoardX)(2) < move){
+        parent(boardy+ydir)(boardx+xdir) = Array(boardx,boardy,move)
+        genAirMoveTiles(move-1, nextLoc)
+      }
+    }
+  }
+  
+  /** generates the valid locations on the board that selected
    *  ground unit can move to immediately
    *  and recurses until the unit is out of movement points
    */
-  def groundMoveTiles(move : Int, jump : Int, vsel : BoardLocation) {
+  def genGroundMoveTiles(move : Int, jump : Int, vsel : BoardLocation) {
     val boardx = vsel.getBoardX
     val boardy = vsel.getBoardY
     
@@ -346,7 +370,7 @@ class Play(state : Int) extends BasicGameState{
         if (i != 0 &&
           parent(nextLoc.getBoardY-1)(nextLoc.getBoardX)(2) < move){
           parent(boardy+i-1)(boardx+dir) = Array(boardx,boardy,move)
-          groundMoveTiles(move-1,jump,board.getBoardLocation(boardx+dir,boardy+i-1));
+          genGroundMoveTiles(move-1,jump,board.getBoardLocation(boardx+dir,boardy+i-1));
         }
       } else {
         calcLowerValidSpaces(dir, move, jump, boardx, boardy, jumplimD, i+1)
@@ -364,20 +388,21 @@ class Play(state : Int) extends BasicGameState{
 	    && !board.getBoardLocation(boardx-1,boardy-i).isPassable
 	    && parent(boardy-i-1)(boardx-1)(2) < move){
 	      parent(boardy-i-1)(boardx-1) = Array(boardx,boardy,move)
-	      groundMoveTiles(move-1,jump,board.getBoardLocation(boardx-1,boardy-i-1))
+	      genGroundMoveTiles(move-1,jump,board.getBoardLocation(boardx-1,boardy-i-1))
 	    }
 	    // check right side of nextLoc
         if (board.getBoardLocation(boardx+1,boardy-i-1).isPassable
 	    && !board.getBoardLocation(boardx+1,boardy-i).isPassable
         && parent(boardy-i-1)(boardx+1)(2) < move){
 	      parent(boardy-i-1)(boardx+1) = Array(boardx,boardy,move)
-          groundMoveTiles(move-1,jump,board.getBoardLocation(boardx+1,boardy-i-1))
+          genGroundMoveTiles(move-1,jump,board.getBoardLocation(boardx+1,boardy-i-1))
 	    }
 	    calcUpperValidSpaces(move, jump, boardx, boardy, jumplimU, i+1)
 	  }  
 	}
   }
   
+  // restore the position of the camera
   def restorePosition{
     camera = restoreCamera.clone
     relativeCamera = restoreRelCamera.clone
