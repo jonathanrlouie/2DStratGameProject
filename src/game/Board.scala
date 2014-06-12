@@ -53,9 +53,9 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
   def addBoardLocation(tile : Char, i : Int, x : Int , y : Int){
     // i determines if a character should be added or not
     if (i >= 0){
-      (board(y))(x) = new BoardLocation(tile, characters(i), x, y)
+      board(y)(x) = new BoardLocation(tile, characters(i), x, y)
     } else {
-      (board(y))(x) = new BoardLocation(tile, null, x, y)
+      board(y)(x) = new BoardLocation(tile, null, x, y)
     }
   }
   
@@ -75,7 +75,7 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
    * EFFECTS: gets a BoardLocation
    */
   def getBoardLocation(x:Int, y:Int) : BoardLocation = {
-    (board(y))(x)
+    board(y)(x)
   }
   
   def getCursor: Array[Int] = cursorPos

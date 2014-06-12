@@ -6,24 +6,27 @@ import org.newdawn.slick._
 import org.newdawn.slick.state._
 import game._
 import scala.Array
+import scala.collection.mutable.Stack
 
 class Play(state : Int) extends BasicGameState{
+  // number of weapons a unit can hold
+  val wepNum = 3
   val spriteSize = 40
   // number of kills a team needs to win the game
   val scoreLimit = 20
   val teams = Array[Team](new Team, new Team)
   
   //placeholder
-  val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife),teams(0)))
+  val units = Array[CharacterUnit](new Knight(Array[Weapon](new Knife,null,null),teams(0)))
   
   var board : Board = new Board(units,12,9,"GEEGEEEEEEEG"+
-  								   		   "GEGEEEESEEEG"+
-  										   "SEEESEEEESES"+
+  								   		   "GEGEEESEEEEG"+
+  										   "SEEEESEEESES"+
   										   "SESEEEEEEEES"+
-  										   "SEEEEEEEEEES"+
-  										   "SEEEEEEEEEES"+
-  						 			       "SEEEEESEEEES"+
-  										   "SEEEEaSEEEES"+
+  										   "SEEESESEEEES"+
+  										   "SEEEEaEEEEES"+
+  						 			       "SESEESESSSES"+
+  										   "SESESESSSEES"+
   										   "SSSSSSSSSSSS")
   // the team who's turn it currently is
   var currentTeam = 0
@@ -47,6 +50,10 @@ class Play(state : Int) extends BasicGameState{
   var moveSelectOn = false
   
   var unitSel: CharacterUnit = units(0)
+  // 3d array
+  // 1st element: x position of parent node
+  // 2nd element: y position of parent node
+  // 3rd element: number of movement points remaining when reaching this tile
   var parent = Array.fill[Int](board.getBoardHeight,board.getBoardWidth,3){-100}
   
   
@@ -86,7 +93,7 @@ class Play(state : Int) extends BasicGameState{
 	  g.setColor(Color.red)
 	  for(i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
 	    val bl : BoardLocation = board.getBoardLocation(i,j)
-	    if (((parent(bl.getBoardY))(bl.getBoardX))(0) != -100) {         
+	    if (parent(bl.getBoardY)(bl.getBoardX)(0) != -100) {         
 	      g.drawRect((i-camera(0))*spriteSize,(j-camera(1))*spriteSize,spriteSize-1,spriteSize-1)
 	    }
 	  }
@@ -102,10 +109,10 @@ class Play(state : Int) extends BasicGameState{
 	  val weps = unitSel.getWeapons
 	  g.setColor(Color.green)
 	  g.drawRect(40*unitSel.getSelectedWep+220,0,40,40)
-	  for (i <- 0 until 5){
-	    //if (weps(i) != null){
-	      new Image("res/" + /*weps(i).getName*/ "Grass" + ".png").draw(spriteSize*i+221,1)
-	    //}	  
+	  for (i <- 0 until wepNum){
+	    if (weps(i) != null){
+	      new Image("res/" + weps(i).getName + ".png").draw(spriteSize*i+221,1)
+	    }	  
 	  }
     }
 	
@@ -142,7 +149,7 @@ class Play(state : Int) extends BasicGameState{
     else if (input.isKeyPressed(Keyboard.KEY_RIGHT)){
       if (!unitOptionsOpen){
         if (weaponMenuOpen){
-          if (unitSel.getSelectedWep < 4){
+          if (unitSel.getSelectedWep < wepNum-1){
             unitSel.setSelectedWep(unitSel.getSelectedWep+1)
           }
         } else {
@@ -227,11 +234,12 @@ class Play(state : Int) extends BasicGameState{
 	        val boardHeight = board.getBoardHeight
 	        val move = unitSel.getMove;
 	        val jump = unitSel.getJump;
+	        parent(unitSel.getBoardY)(unitSel.getBoardX) = Array(unitSel.getBoardX,unitSel.getBoardY,move+1);
 	        if (unitSel.isInstanceOf[AirUnit]){
-              // TODO
+              // generate the valid movement locations for an air unit given its movement and initial board location
+	          airMoveTiles(move,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
 	        } else {
-	          // generate the valid movement locations for a unit given its move, jump, and initial board location
-	          (parent(unitSel.getBoardY))(unitSel.getBoardX) = Array(unitSel.getBoardX,unitSel.getBoardY,move+1);
+	          // generate the valid movement locations for a ground unit given its move, jump, and initial board location
               groundMoveTiles(move,jump,board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY))
 	        }
 	        moveSelectOn = true
@@ -248,23 +256,49 @@ class Play(state : Int) extends BasicGameState{
         }
         else if (moveSelectOn){
           // temporary until I fix groundMoveTiles' algorithm
-          if (((parent(cursorY))(cursorX))(0) != -100){
-            board.getBoardLocation(unitSel.getBoardX,unitSel.getBoardY).removeSprite
-	        board.getBoardLocation(cursorX,cursorY).addSprite(unitSel)
+          // TODO
+          if (parent(cursorY)(cursorX)(0) != -100){
+            val stck = new Stack[Array[Int]]
+            stck.push(Array(cursorX,cursorY))
+            var pathCoords = Array(parent(cursorY)(cursorX)(0),
+                parent(cursorY)(cursorX)(1))
+            // push parent coords on to stack one by one
+            while (pathCoords(0) != parent(pathCoords(1))(pathCoords(0))(0)
+                || pathCoords(1) != parent(pathCoords(1))(pathCoords(0))(1)){
+              stck.push(Array(pathCoords(0),pathCoords(1)))
+              pathCoords = Array(parent(pathCoords(1))(pathCoords(0))(0), 
+                  parent(pathCoords(1))(pathCoords(0))(1))
+            }
+            // testing stack behaviour
+            while (!stck.isEmpty){
+              val popped = stck.pop()
+              println(popped(0) + ", " + popped(1))
+            }
           }
 	    }
         else if (weaponMenuOpen){
-          unitSel.useItem(unitSel.getSelectedWep)
-          if (unitSel.getTeam.getScore == scoreLimit){
-            gameWin(unitSel.getTeamNum)
+          if (unitSel.getWeapons(unitSel.getSelectedWep) != null){
+            unitSel.useItem(unitSel.getSelectedWep)
+            if (unitSel.getTeam.getScore == scoreLimit){
+              gameWin(unitSel.getTeamNum)
+            }
           }
         }
       }
     }
   }
   
+  
   /** finds the valid locations on the board that selected
-   *  unit can move to immediately
+   *  air unit can move to immediately
+   *  and recurses until the unit is out of movement points
+   */
+  def airMoveTiles(move: Int, vsel: BoardLocation){
+    //TODO
+  }
+  
+  /** finds the valid locations on the board that selected
+   *  ground unit can move to immediately
    *  and recurses until the unit is out of movement points
    */
   def groundMoveTiles(move : Int, jump : Int, vsel : BoardLocation) {
@@ -280,43 +314,10 @@ class Play(state : Int) extends BasicGameState{
 	  } else {
 	    jump+1
 	  }
-      var blockFoundL = false
-      var blockFoundR = false
-      // check each block to the sides of the unit and
-      // below the unit on those same sides
-      for (i <- 0 to jumplimD){
-        if (!blockFoundL){
-          val nextlocL = board.getBoardLocation(boardx-1,boardy+i)
-          // if we encounter a block
-          if (!nextlocL.isPassable){
-            blockFoundL = true
-            /** Make sure we don't say block above ground level is valid;
-             * we don't know that unless we check the jumping up condition.
-             * Also, check if we have found a shorter path to this vertex/
-             * haven't explored this vertex already if it IS valid
-             */
-            if (i != 0 &&
-               ((parent(nextlocL.getBoardY-1))(nextlocL.getBoardX))(2) < move){
-		       (parent(boardy+i-1))(boardx-1) = Array(boardx,boardy,move)
-               groundMoveTiles(move-1,jump,board.getBoardLocation(boardx-1,boardy+i-1));
-            }
-          }
-        }
-        // same thing on the right hand side; might make this into a method later
-        if (!blockFoundR){
-          val nextlocR = board.getBoardLocation(boardx+1,boardy+i)
-          if (!nextlocR.isPassable){
-            blockFoundR = true
-            if (i != 0 &&
-               ((parent(nextlocR.getBoardY-1))(nextlocR.getBoardX))(2) < move){
-		       (parent(boardy+i-1))(boardx+1) = Array(boardx,boardy,move)
-               groundMoveTiles(move-1,jump,board.getBoardLocation(boardx+1,boardy+i-1));
-            }
-          }
-        }
-      }
-      
-	  // jumping upwards code
+      calcLowerValidSpaces(-1, move, jump, boardx, boardy, jumplimD, 0)
+      calcLowerValidSpaces(1, move, jump, boardx, boardy, jumplimD, 0)
+	  
+      // jumping upwards code
       
       // boundary condition for the top border
 	  val jumplimU = if (boardy-jump < 0){
@@ -324,42 +325,57 @@ class Play(state : Int) extends BasicGameState{
 	  } else {
 	    jump
 	  }
-	  for(j <- 0 until jumplimU){
-	    // start with left side
-	    // here, nextlocL is the actual square that we want to move to
-	    val nextlocL = board.getBoardLocation(boardx-1,boardy-j-1)
-	    // check each space above space to left of selected space
-	    // if both empty and there's a block under
-	    if (nextlocL.isPassable && !board.getBoardLocation(boardx-1,boardy-j).isPassable){
-	      var jumpable:Boolean = true;
-	      // check that the column above unit is empty up to jumpable position
-	      for (k <- 1 to nextlocL.getBoardY){
-	        if(!board.getBoardLocation(boardx,boardy-k).isPassable){
-	          jumpable = false;
-	        }
-	      }
-	      if (jumpable && ((parent(nextlocL.getBoardY))(nextlocL.getBoardX))(2) < move){
-	        (parent(boardy-j-1))(boardx-1) = Array(boardx,boardy,move)
-	        groundMoveTiles(move-1,jump,nextlocL);
-	      }
-	    }
-	    // right side
-	    // here, nextlocR is the actual square that we want to move to
-	    val nextlocR = board.getBoardLocation(boardx+1,boardy-j-1)
-	    if (nextlocR.isPassable && !board.getBoardLocation(boardx+1,boardy-j).isPassable){
-	      var jumpable:Boolean = true;
-	      for (k <- 1 to nextlocR.getBoardY){
-	        if(!board.getBoardLocation(boardx,boardy-k).isPassable){
-	          jumpable = false;
-	        }
-	      }
-	      if (jumpable && ((parent(nextlocR.getBoardY))(nextlocR.getBoardX))(2) < move){
-	        (parent(boardy-j-1))(boardx+1) = Array(boardx,boardy,move)
-	        groundMoveTiles(move-1,jump,nextlocR);
-	      }
-	    }
-	  }
+      calcUpperValidSpaces(move, jump, boardx, boardy, jumplimU, 0)
     }
+  }
+  
+  // calculate valid moveable tiles at unit's height or lower
+  // dir is 1 when calculating tiles on the right 
+  // dir is -1 for tiles on the left
+  def calcLowerValidSpaces(dir: Int, move: Int, jump: Int, boardx: Int, boardy: Int, jumplimD: Int, i: Int) {
+    if (i <= jumplimD){
+      val nextLoc = board.getBoardLocation(boardx+dir,boardy+i)
+      // if we encounter a block
+      if (!nextLoc.isPassable){
+        /** Make sure we don't say block above ground level is valid;
+          * we don't know that unless we check the jumping up condition.
+          * Also, check if we have found a shorter path to this vertex/
+          * haven't explored this vertex already if it IS valid
+          * check i != 0 to see if adjacent block; terminate if so
+          */
+        if (i != 0 &&
+          parent(nextLoc.getBoardY-1)(nextLoc.getBoardX)(2) < move){
+          parent(boardy+i-1)(boardx+dir) = Array(boardx,boardy,move)
+          groundMoveTiles(move-1,jump,board.getBoardLocation(boardx+dir,boardy+i-1));
+        }
+      } else {
+        calcLowerValidSpaces(dir, move, jump, boardx, boardy, jumplimD, i+1)
+      }
+    }
+  }
+  
+  // calculate valid moveable tiles above unit's height
+  def calcUpperValidSpaces(move: Int, jump: Int, boardx: Int, boardy: Int, jumplimU: Int, i: Int){
+    if (i < jumplimU){
+	  val nextLoc = board.getBoardLocation(boardx,boardy-i-1)
+	  if (nextLoc.isPassable){
+	    // check left side of nextLoc
+	    if (board.getBoardLocation(boardx-1,boardy-i-1).isPassable
+	    && !board.getBoardLocation(boardx-1,boardy-i).isPassable
+	    && parent(boardy-i-1)(boardx-1)(2) < move){
+	      parent(boardy-i-1)(boardx-1) = Array(boardx,boardy,move)
+	      groundMoveTiles(move-1,jump,board.getBoardLocation(boardx-1,boardy-i-1))
+	    }
+	    // check right side of nextLoc
+        if (board.getBoardLocation(boardx+1,boardy-i-1).isPassable
+	    && !board.getBoardLocation(boardx+1,boardy-i).isPassable
+        && parent(boardy-i-1)(boardx+1)(2) < move){
+	      parent(boardy-i-1)(boardx+1) = Array(boardx,boardy,move)
+          groundMoveTiles(move-1,jump,board.getBoardLocation(boardx+1,boardy-i-1))
+	    }
+	    calcUpperValidSpaces(move, jump, boardx, boardy, jumplimU, i+1)
+	  }  
+	}
   }
   
   def restorePosition{
