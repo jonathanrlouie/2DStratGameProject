@@ -4,6 +4,7 @@ import java.io._
 import org.lwjgl.input.Keyboard
 import org.newdawn.slick._
 import org.newdawn.slick.state._
+import game.states._
 import game._
 import scala.Array
 import scala.collection.mutable.Stack
@@ -19,7 +20,7 @@ class Play(state : Int) extends BasicGameState{
   //placeholder
   val units = Array[CharacterUnit](new HeliPilot(Array[Weapon](new Knife,null,null),teams(0)))
   
-  var board : Board = new Board(units,12,9,"GEEGEEEEEEEG"+
+  val board : Board = new Board(units,12,9,"GEEGEEEEEEEG"+
   								   		   "GEGEEEEEEEEG"+
   										   "SEEEEEEEESES"+
   										   "SESEEEEEEEES"+
@@ -28,18 +29,20 @@ class Play(state : Int) extends BasicGameState{
   						 			       "SESSEEEEESES"+
   										   "SESESEESSEES"+
   										   "SSSSSSSSSSSS")
+  val cursor: Cursor = new Cursor
+  
+  var imgholder: ImageHolder = null
   // the team who's turn it currently is
   var currentTeam = 0
   
-  var camera = new Array[Int](2)
-  var relativeCamera = new Array[Int](2)
   
-  // restore camera position
-  var restoreCamera = new Array[Int](2)
-  var restoreRelCamera = new Array[Int](2)
-  
-  val cameraWidth = 8
-  val cameraHeight = 8
+  val stateMap: Map[String, BoardState] = 
+  		Map("cursorState" -> new CursorState(),
+  		    "unitOptionsMenu" -> new UnitOptionsMenu(),
+  			"weaponMenu" -> new WeaponMenu(),
+  			"moveMenu" -> new MoveMenu())
+  val stateStack = new Stack[String]()//new Stack[BoardState]()
+  var currentState: String = null
   
   // whether unit's options menu is open (move, use item, turn around)
   var unitOptionsOpen = false
@@ -54,7 +57,7 @@ class Play(state : Int) extends BasicGameState{
   // 1st element: x position of parent node
   // 2nd element: y position of parent node
   // 3rd element: number of movement points remaining when reaching this tile
-  var parent = Array.fill[Int](board.getBoardHeight,board.getBoardWidth,3){-100}
+  var parent = Array.fill[Int](board.getHeight,board.getWidth,3){-100}
   
   
   def load(path : String) : Object = {
@@ -64,20 +67,22 @@ class Play(state : Int) extends BasicGameState{
 	result
   }
   
-  override def init(gc:GameContainer, sbg : StateBasedGame){
-    board.createBoard
+  override def init(gc:GameContainer, sbg : StateBasedGame): Unit = {
+    board.init()
+    stateStack.push("cursorState")
+    currentState = stateStack.top
+    imgholder = new ImageHolder()
     // temporary; just need to initialize the board variable for all units
     units(0).setBoard(board)
-    // start camera at top left of board
-    camera(0) = 0
-    camera(1) = 0
-    relativeCamera(0) = 0
-    relativeCamera(1) = 0
   }
   
-  override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics){
-    renderBoard(g)
-      
+  override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics): Unit = {
+    val camera = new Camera(gc,board)
+    camera.centerOn(cursor.getX(), cursor.getY())
+    board.render(g)
+    cursor.render(imgholder.getImgmap()("cursor"))
+    
+    
     if (unitOptionsOpen){
       g.setColor(Color.black)
       g.drawRect(220,0,196,3*42+1)
@@ -89,15 +94,14 @@ class Play(state : Int) extends BasicGameState{
     }
     
 	// temporary way to render tiles unit can move to
-	if (moveSelectOn){
-	  g.setColor(Color.red)
+	/*if (moveSelectOn){
 	  for(i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
 	    val bl : BoardLocation = board.getBoardLocation(i,j)
 	    if (parent(bl.getBoardY)(bl.getBoardX)(0) != -100) {         
-	      g.drawRect((i-camera(0))*spriteSize,(j-camera(1))*spriteSize,spriteSize-1,spriteSize-1)
+	      new Image("res/MoveTile.png").draw((i-camera(0))*spriteSize,(j-camera(1))*spriteSize,spriteSize-1,spriteSize-1)
 	    }
 	  }
-	}
+	}*/
 	  
 	if (weaponMenuOpen){
 	  val xcoord = unitSel.getX
@@ -115,19 +119,18 @@ class Play(state : Int) extends BasicGameState{
 	    }	  
 	  }
     }
-	
-    drawCursor
   }
   
-  def drawCursor: Unit = {
-    new Image("res/Cursor.png").draw(relativeCamera(0)*spriteSize,relativeCamera(1)*spriteSize)
-  }
-  
-  override def update(gc:GameContainer, sbg : StateBasedGame, delta : Int){
+  override def update(gc:GameContainer, sbg : StateBasedGame, delta : Int): Unit = {
     val input = gc.getInput
-    val cursorX = board.getCursor(0)
-    val cursorY = board.getCursor(1)
-    
+    //currentState.update(input)
+    currentState match {
+      	case "cursorState" => 
+    	case "weaponMenu" => 
+    	case "moveMenu" => 
+    }
+        
+    /*
     if (input.isKeyPressed(Keyboard.KEY_LEFT)){
       if (!unitOptionsOpen){
         if (weaponMenuOpen){
@@ -153,7 +156,7 @@ class Play(state : Int) extends BasicGameState{
             unitSel.setSelectedWep(unitSel.getSelectedWep+1)
           }
         } else {
-          if (cursorX < board.getBoardWidth-1){
+          if (cursorX < board.getWidth-1){
             board.setCursor(cursorX+1,cursorY)
             if (relativeCamera(0) < cameraWidth){
               relativeCamera(0) += 1
@@ -171,7 +174,7 @@ class Play(state : Int) extends BasicGameState{
             unitOption += 1
           }
         } else {
-	      if (cursorY < board.getBoardHeight-1){
+	      if (cursorY < board.getHeight-1){
 	        board.setCursor(cursorX,cursorY+1)
 	        if (relativeCamera(1) < cameraHeight){
 	          relativeCamera(1) += 1
@@ -212,7 +215,7 @@ class Play(state : Int) extends BasicGameState{
       } else if (moveSelectOn){
         moveSelectOn = false
         unitOptionsOpen = true
-        restorePosition
+        //restorePosition
       }
     }
     // press Z to select unit and perform actions
@@ -230,8 +233,8 @@ class Play(state : Int) extends BasicGameState{
         if (unitOptionsOpen){
           unitOptionsOpen = false
           if (unitOption == 0){
-            val boardWidth = board.getBoardWidth
-	        val boardHeight = board.getBoardHeight
+            val boardWidth = board.getWidth
+	        val boardHeight = board.getHeight
 	        val move = unitSel.getMove;
 	        val jump = unitSel.getJump;
 	        parent(unitSel.getBoardY)(unitSel.getBoardX) = Array(unitSel.getBoardX,unitSel.getBoardY,move+1);
@@ -285,7 +288,7 @@ class Play(state : Int) extends BasicGameState{
           }
         }
       }
-    }
+    }*/
   }
   
   
@@ -333,8 +336,8 @@ class Play(state : Int) extends BasicGameState{
       // jumping down/walking code
       
       // boundary condition, reduce drop height if at edge of screen
-	  val jumplimD = if (boardy+jump+1 >= board.getBoardHeight){
-	    board.getBoardHeight-boardy-1;
+	  val jumplimD = if (boardy+jump+1 >= board.getHeight){
+	    board.getHeight-boardy-1;
 	  } else {
 	    jump+1
 	  }
@@ -401,19 +404,19 @@ class Play(state : Int) extends BasicGameState{
 	  }  
 	}
   }
-  
+  /*
   // restore the position of the camera
   def restorePosition{
     camera = restoreCamera.clone
     relativeCamera = restoreRelCamera.clone
     board.setCursor(unitSel.getBoardX,unitSel.getBoardY)
-  }
+  }*/
   
-  def gameWin(teamNum: Int){
+  def gameWin(teamNum: Int): Unit = {
     //TODO
   }
   
-  def renderBoard(g: Graphics){
+  /*def renderBoard(g: Graphics){
     val backgroundimg : Image = new Image("res/Background.png")
     backgroundimg.draw(0,0)
     for (i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
@@ -432,7 +435,7 @@ class Play(state : Int) extends BasicGameState{
         }
       }
     }
-  }
+  }*/
   
-  override def getID : Int = 2
+  override def getID() : Int = 2
 }

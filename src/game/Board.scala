@@ -1,6 +1,7 @@
 package game
 
 import scala.Array
+import org.newdawn.slick.Graphics
 
 class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
   // (0,0) is at the top left here
@@ -8,12 +9,14 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
 		  					   "GEEG" +
 		  					   "GEEG" +
 		  					   "GGGG"
-  var boardwidth : Int = w
-  var boardheight : Int = h
-  var cursorPos = new Array[Int](2)
+		  					   
+  @scala.reflect.BeanProperty
+  var width : Int = w
+  @scala.reflect.BeanProperty
+  var height : Int = h
   var boardmap : String = map
   
-  var board = Array.ofDim[BoardLocation](boardheight,boardwidth)
+  var board = Array.ofDim[BoardLocation](height,width)
   var characters : Array[CharacterUnit] = c
   
   
@@ -25,15 +28,13 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
    * MODIFIES: board
    * EFFECTS: creates a board
    */
-  def createBoard{
-    
-    setCursor(0,0)
+  def init(): Unit = {
     
     for (i <- 0 until boardmap.length){
       var charOnBoard : Char = boardmap.charAt(i)
       
-      var x = i % boardwidth
-      var y = i / boardwidth
+      var x = i % width
+      var y = i / width
       
       charOnBoard match{
         case 'a' => addBoardLocation(charOnBoard, 0 ,x, y)
@@ -78,20 +79,11 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
     board(y)(x)
   }
   
-  def getCursor: Array[Int] = cursorPos
-  
-  def setCursor(x: Int, y:Int) {
-    cursorPos(0) = x
-    cursorPos(1) = y
-  }
-  
   def getBoard : Array[Array[BoardLocation]] = board
-  def getBoardWidth : Int = boardwidth
-  def getBoardHeight : Int = boardheight
   
   def setSize(w : Int, h : Int){
-    boardwidth = w
-    boardheight = h
+    width = w
+    height = h
   }
   
   def setBoard(bd:Array[Array[BoardLocation]]){
@@ -100,6 +92,10 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
   
   def setCharacters(chrs:Array[CharacterUnit]){
     characters = chrs
+  }
+  
+  def render(g: Graphics){
+    
   }
 
 }

@@ -1,5 +1,7 @@
 package game
 
+import org.newdawn.slick.Graphics
+
 abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
     val team = teamObj
     @scala.reflect.BeanProperty
@@ -98,5 +100,9 @@ abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
     
     def setSelectedWep(sel : Int){
       selectedWeapon = sel
+    }
+    
+    def render(g: Graphics){
+      
     }
 }
