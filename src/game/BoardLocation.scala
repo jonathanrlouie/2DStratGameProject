@@ -6,6 +6,7 @@ class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
   val boardy = y
   val spriteSize = 40
   
+  @scala.reflect.BeanProperty
   var sprite : Sprite = null
   
   tile match {
@@ -35,12 +36,6 @@ class BoardLocation(tile : Char, c : CharacterUnit, x: Int, y: Int) {
   
   def hasSprite : Boolean = {
     sprite != null
-  }
-  
-  def getSprite : Sprite = sprite
-  
-  def addSprite(spr : Sprite) {
-    sprite = spr
   }
   
   def removeSprite{

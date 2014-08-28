@@ -79,6 +79,10 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
     board(y)(x)
   }
   
+  def getBoardSprite(x:Int, y:Int): Sprite = {
+    getBoardLocation(x,y).getSprite()
+  }
+  
   def getBoard : Array[Array[BoardLocation]] = board
   
   def setSize(w : Int, h : Int){

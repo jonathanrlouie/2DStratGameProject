@@ -29,20 +29,15 @@ class Play(state : Int) extends BasicGameState{
   						 			       "SESSEEEEESES"+
   										   "SESESEESSEES"+
   										   "SSSSSSSSSSSS")
-  val cursor: Cursor = new Cursor
+  val cursor: Cursor = new Cursor()
   
   var imgholder: ImageHolder = null
   // the team who's turn it currently is
   var currentTeam = 0
   
+  val stateManager = new StateManager()
   
-  val stateMap: Map[String, BoardState] = 
-  		Map("cursorState" -> new CursorState(),
-  		    "unitOptionsMenu" -> new UnitOptionsMenu(),
-  			"weaponMenu" -> new WeaponMenu(),
-  			"moveMenu" -> new MoveMenu())
-  val stateStack = new Stack[String]()//new Stack[BoardState]()
-  var currentState: String = null
+  val sdb = new StateDataBundle()
   
   // whether unit's options menu is open (move, use item, turn around)
   var unitOptionsOpen = false
@@ -52,7 +47,6 @@ class Play(state : Int) extends BasicGameState{
   // whether movement tiles for a unit exist on the board or not
   var moveSelectOn = false
   
-  var unitSel: CharacterUnit = units(0)
   // 3d array
   // 1st element: x position of parent node
   // 2nd element: y position of parent node
@@ -69,18 +63,26 @@ class Play(state : Int) extends BasicGameState{
   
   override def init(gc:GameContainer, sbg : StateBasedGame): Unit = {
     board.init()
-    stateStack.push("cursorState")
-    currentState = stateStack.top
+    cursor.setBoardX(0)
+    cursor.setBoardY(0)
+    cursor.setX(cursor.getBoardX()*spriteSize)
+    cursor.setY(cursor.getBoardY()*spriteSize)
+    stateManager.enterState(new CursorState())
     imgholder = new ImageHolder()
     // temporary; just need to initialize the board variable for all units
     units(0).setBoard(board)
+    sdb.setBoard(board)
+    sdb.setCursor(cursor)
+    sdb.setUnits(units)
+    sdb.setUnitSel(null)
   }
   
   override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics): Unit = {
+    imgholder.getImage("background").draw(0,0)
     val camera = new Camera(gc,board)
-    camera.centerOn(cursor.getX(), cursor.getY())
+    camera.centerOn(cursor.getX()+spriteSize/2, cursor.getY()+spriteSize/2)
     board.render(g)
-    cursor.render(imgholder.getImgmap()("cursor"))
+    cursor.render(imgholder.getImage("cursor"),camera)
     
     
     if (unitOptionsOpen){
@@ -103,7 +105,7 @@ class Play(state : Int) extends BasicGameState{
 	  }
 	}*/
 	  
-	if (weaponMenuOpen){
+	/*if (weaponMenuOpen){
 	  val xcoord = unitSel.getX
 	  val ycoord = unitSel.getY
         
@@ -118,17 +120,16 @@ class Play(state : Int) extends BasicGameState{
 	      new Image("res/" + weps(i).getName + ".png").draw(spriteSize*i+221,1)
 	    }	  
 	  }
-    }
+    }*/
   }
   
   override def update(gc:GameContainer, sbg : StateBasedGame, delta : Int): Unit = {
     val input = gc.getInput
-    //currentState.update(input)
-    currentState match {
-      	case "cursorState" => 
-    	case "weaponMenu" => 
-    	case "moveMenu" => 
-    }
+    sdb.setInput(input)
+    sdb.setDelta(delta)
+    stateManager.updateCurrentState(sdb)
+    
+  }
         
     /*
     if (input.isKeyPressed(Keyboard.KEY_LEFT)){
@@ -289,7 +290,7 @@ class Play(state : Int) extends BasicGameState{
         }
       }
     }*/
-  }
+  //}
   
   
   /** generates the valid locations on the board that selected
