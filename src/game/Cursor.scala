@@ -6,7 +6,7 @@ import org.newdawn.slick.Graphics
 import org.lwjgl.input.Keyboard
 import org.newdawn.slick.GameContainer
 
-class Cursor {
+class Cursor(board: Board) {
 	val spriteSize = 40
     private var moving = false
 	@scala.reflect.BeanProperty
@@ -18,48 +18,64 @@ class Cursor {
 	@scala.reflect.BeanProperty
 	var boardY: Int = 0
 	
-	var xspeed = 0.0f
-    var yspeed = 0.0f
+	var speed = 0.2f
+	private var facing: Char = ' '
+    
+	def update(input: Input, delta: Int, board: Board): Unit = {
+		if (moving){
+			checkStop(delta)
+		} else {
+			handleInput(input)
+		}
+	}
 	
-	def update(input: Input, delta: Int): Unit = {
-		if (!moving){
-	    	if (input.isKeyDown(Input.KEY_UP)) {
-				yspeed = -0.1f
-				moving = true
-			} else if (input.isKeyDown(Input.KEY_DOWN)) {
-				yspeed = 0.1f
-				moving = true
-			} else if (input.isKeyDown(Input.KEY_LEFT)) {
-				xspeed = -0.1f
-				moving = true
-			} else if (input.isKeyDown(Input.KEY_RIGHT)) {
-				xspeed = 0.1f
-				moving = true
+	def checkStop(delta: Int): Unit = {
+		if (facing.equals('U') && y > boardY*spriteSize){
+			y -= speed * delta
+			if (y < boardY*spriteSize){
+				y = boardY*spriteSize
+			}
+		} else if (facing.equals('D') && y < boardY*spriteSize){
+			y += speed * delta
+			if (y > boardY*spriteSize){
+				y = boardY*spriteSize
+			}
+		} else if (facing.equals('L') && x > boardX*spriteSize){
+			x -= speed * delta
+			if (x < boardX*spriteSize){
+				x = boardX*spriteSize
+			}
+		} else if (facing.equals('R') && x < boardX*spriteSize){
+			x += speed * delta
+			if (x > boardX*spriteSize){
+				x = boardX*spriteSize
 			}
 		} else {
-			if (x < (boardX+1)*spriteSize && x > (boardX-1)*spriteSize){
-				println("tunak")
-				x += xspeed * delta
-			} else if (y < (boardY+1)*spriteSize && y > (boardY-1)*spriteSize){
-				println("hey")
-				y += yspeed * delta
-			} else {
-				println("hello")
-				if (xspeed > 0){
-					boardX += 1
-				} else if (xspeed < 0){
-					boardX -= 1
-				} else if (yspeed > 0){
-					boardY += 1
-				} else if (yspeed < 0){
-					boardY -= 1
-				}
-				xspeed = 0.0f
-				yspeed = 0.0f
-				moving = false
-			}
+			moving = false
 		}
-		
+	}
+	
+	def handleInput(input: Input): Unit = {
+		changeFacing(input)
+		moving = true
+	}
+	
+	def changeFacing(input: Input): Unit = {
+		if (input.isKeyDown(Input.KEY_UP) && boardY-1 >= 0) {
+			facing = 'U'
+			boardY-=1
+		} else if (input.isKeyDown(Input.KEY_DOWN) && boardY+1 < board.getHeight()) {
+			facing = 'D'
+			boardY+=1
+		} else if (input.isKeyDown(Input.KEY_LEFT) && boardX-1 >= 0) {
+			facing = 'L'
+			boardX-=1
+		} else if (input.isKeyDown(Input.KEY_RIGHT) && boardX+1 < board.getWidth()) {
+			facing = 'R'
+			boardX+=1
+		} else {
+		    facing = ' '
+		}
 	}
 	
 	def render(img: Image, camera: Camera){

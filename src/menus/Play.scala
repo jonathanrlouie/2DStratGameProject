@@ -20,16 +20,21 @@ class Play(state : Int) extends BasicGameState{
   //placeholder
   val units = Array[CharacterUnit](new HeliPilot(Array[Weapon](new Knife,null,null),teams(0)))
   
-  val board : Board = new Board(units,12,9,"GEEGEEEEEEEG"+
-  								   		   "GEGEEEEEEEEG"+
-  										   "SEEEEEEEESES"+
-  										   "SESEEEEEEEES"+
-  										   "SEEEEEaEEEES"+
-  										   "SEEEEEEEEEES"+
-  						 			       "SESSEEEEESES"+
-  										   "SESESEESSEES"+
-  										   "SSSSSSSSSSSS")
-  val cursor: Cursor = new Cursor()
+  val board : Board = new Board(units,spriteSize,21,13, "GEEGEEEEEEEEEEEEEEEEG"+
+  								   		    			"GEGEEEEEEEEEEEEEEEEEG"+
+  								   		    			"SEEEEEEEEEEEEEEEEEEES"+
+  								   		    			"SEEEEEEEEEEEEEEEEEEES"+
+			  								   		    "SEEEEEEEEEEEEEEEEEEES"+
+			  								   		    "SEEEEEEEEEEEEEEEEEEES"+
+			  										    "SEEEEEEEEEEEEEEEEEEES"+
+			  										    "SESEEEEEEEEEEEEEEEEES"+
+			  										    "SEEEEEaEEEEEEEEEEEEES"+
+			  										    "SEEEEEEEEEEEEEEEEEEES"+
+			  						 			        "SESSEEEEESEEEEEEEEEES"+
+			  										    "SESESEESSEEEEEEEEEEES"+
+			  										    "SSSSSSSSSSSSSSSSSSSSS")
+  val cursor: Cursor = new Cursor(board)
+  var camera: Camera = null
   
   var imgholder: ImageHolder = null
   // the team who's turn it currently is
@@ -62,30 +67,33 @@ class Play(state : Int) extends BasicGameState{
   }
   
   override def init(gc:GameContainer, sbg : StateBasedGame): Unit = {
+    camera = new Camera(board,gc)
     board.init()
     cursor.setBoardX(0)
     cursor.setBoardY(0)
     cursor.setX(cursor.getBoardX()*spriteSize)
     cursor.setY(cursor.getBoardY()*spriteSize)
-    stateManager.enterState(new CursorState())
     imgholder = new ImageHolder()
     // temporary; just need to initialize the board variable for all units
-    units(0).setBoard(board)
+    //units(0).setBoard(board)
     sdb.setBoard(board)
     sdb.setCursor(cursor)
     sdb.setUnits(units)
     sdb.setUnitSel(null)
+    sdb.setCamera(camera)
+    sdb.setImgHolder(imgholder)
+    sdb.setGc(gc)
+    sdb.setSpriteSize(spriteSize)
+    stateManager.enterState(new CursorState(),sdb)
   }
   
   override def render(gc:GameContainer, sbg : StateBasedGame, g:Graphics): Unit = {
     imgholder.getImage("background").draw(0,0)
-    val camera = new Camera(gc,board)
-    camera.centerOn(cursor.getX()+spriteSize/2, cursor.getY()+spriteSize/2)
-    board.render(g)
-    cursor.render(imgholder.getImage("cursor"),camera)
+    board.render(gc,imgholder,camera,g)
+    sdb.setGraphics(g)
+    stateManager.renderCurrentState(sdb)
     
-    
-    if (unitOptionsOpen){
+    /*if (unitOptionsOpen){
       g.setColor(Color.black)
       g.drawRect(220,0,196,3*42+1)
       new Image("res/MovePanel.png").draw(221,1)
@@ -93,7 +101,7 @@ class Play(state : Int) extends BasicGameState{
       new Image("res/TurnPanel.png").draw(221,85)
       g.setColor(Color.yellow)
       g.drawRect(221,unitOption*42,194,42)
-    }
+    }*/
     
 	// temporary way to render tiles unit can move to
 	/*if (moveSelectOn){
@@ -405,38 +413,10 @@ class Play(state : Int) extends BasicGameState{
 	  }  
 	}
   }
-  /*
-  // restore the position of the camera
-  def restorePosition{
-    camera = restoreCamera.clone
-    relativeCamera = restoreRelCamera.clone
-    board.setCursor(unitSel.getBoardX,unitSel.getBoardY)
-  }*/
   
   def gameWin(teamNum: Int): Unit = {
     //TODO
   }
-  
-  /*def renderBoard(g: Graphics){
-    val backgroundimg : Image = new Image("res/Background.png")
-    backgroundimg.draw(0,0)
-    for (i <- camera(0) to camera(0)+cameraWidth; j <- camera(1) to camera(1)+cameraHeight){
-      val bl : BoardLocation = board.getBoardLocation(i,j)
-      //might need to change this later, not sure
-      if (bl.hasSprite){
-        val blspr = bl.getSprite
-        if (blspr.isInstanceOf[Block]){
-          val img : Image = new Image("res/" + blspr.getName + ".png")
-          img.draw(spriteSize*(i-camera(0)),spriteSize*(j-camera(1)))
-        } 
-        else if (blspr.isInstanceOf[CharacterUnit]){
-          //obvious placeholder
-          g.setColor(Color.green)
-          g.drawRect(spriteSize*(i-camera(0)),spriteSize*(j-camera(1)),39,39)
-        }
-      }
-    }
-  }*/
   
   override def getID() : Int = 2
 }

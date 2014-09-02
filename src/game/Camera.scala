@@ -2,7 +2,9 @@ package game
 
 import org.newdawn.slick.GameContainer
 
-class Camera(gc: GameContainer, board: Board) {
+class Camera(board: Board, gc: GameContainer) {
+	val spriteSize = 40
+	
 	@scala.reflect.BeanProperty
 	var cameraX: Float = 0.0f
 	@scala.reflect.BeanProperty
@@ -11,7 +13,7 @@ class Camera(gc: GameContainer, board: Board) {
 	private val boardWidth: Int = board.getWidth
 	private val boardHeight: Int = board.getHeight
 	
-	private val this.gc = gc
+	private val this.gc: GameContainer = gc
 	private val this.board = board
 	
 	def centerOn(x: Float, y: Float) {
@@ -21,23 +23,22 @@ class Camera(gc: GameContainer, board: Board) {
 		if (cameraX < 0) {
 			cameraX = 0;
     	}
-		/*if (cameraX + gc.getWidth() > board.getWidth) {
-			cameraX = board.getWidth - gc.getWidth();
-		}*/
+		if (cameraX + gc.getWidth() > board.getWidth*spriteSize) {
+			cameraX = board.getWidth*spriteSize - gc.getWidth();
+		}
 		
 		if (cameraY < 0) {
             cameraY = 0;
         }
-		/*
-        if (cameraY + gc.getHeight() > board.getHeight) {
-            cameraY = board.getHeight - gc.getHeight();
-        }*/
+		
+        if (cameraY + gc.getHeight() > board.getHeight*spriteSize) {
+            cameraY = board.getHeight*spriteSize - gc.getHeight();
+        }
 	}
         
     def centerOn(x: Float, y: Float, height: Float, width: Float) {
         this.centerOn(x + width / 2, y + height / 2)
     }
-    
     
     
 	

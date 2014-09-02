@@ -8,16 +8,22 @@ class StateManager {
 	val stateStack = new Stack[BoardState]()
 	private var currentState: BoardState = null
 	
-	def enterState(state: BoardState): Unit = {
+	def enterState(state: BoardState, sdb: StateDataBundle): Unit = {
 		stateStack.push(state)
+		state.init(sdb)
 		currentState = stateStack.top
 	}
 	
-	def leaveState(): Unit = {
+	def exitState(): Unit = {
 		stateStack.pop()
+		currentState = stateStack.top
 	}
 	
 	def updateCurrentState(sdb: StateDataBundle): Unit = {
 		currentState.update(sdb,this)
+	}
+	
+	def renderCurrentState(sdb: StateDataBundle): Unit = {
+		currentState.render(sdb)
 	}
 }

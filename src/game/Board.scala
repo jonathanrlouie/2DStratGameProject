@@ -2,14 +2,17 @@ package game
 
 import scala.Array
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.Image
+import org.newdawn.slick.GameContainer
 
-class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
+class Board(c:Array[CharacterUnit],sprSize: Int,w:Int,h:Int,map:String) {
   // (0,0) is at the top left here
   val DEFAULT_BOARD : String = "GGGG" +
 		  					   "GEEG" +
 		  					   "GEEG" +
 		  					   "GGGG"
 		  					   
+	private val spriteSize = sprSize
   @scala.reflect.BeanProperty
   var width : Int = w
   @scala.reflect.BeanProperty
@@ -95,11 +98,22 @@ class Board(c:Array[CharacterUnit],w:Int,h:Int,map:String) {
   }
   
   def setCharacters(chrs:Array[CharacterUnit]){
-    characters = chrs
+	  characters = chrs
   }
   
-  def render(g: Graphics){
-    
-  }
-
+	def render(gc: GameContainer, imgholder: ImageHolder, camera: Camera, g: Graphics){
+		for (i <- 0 until width; j <- 0 until height){
+			val bl : BoardLocation = getBoardLocation(i,j)
+			if (bl.hasSprite){
+				val blspr = bl.getSprite
+				if (blspr.isInstanceOf[Block]){
+					val img : Image = imgholder.getImage(blspr.getName)
+					img.draw(spriteSize*i-camera.getCameraX(),spriteSize*j-camera.getCameraY())
+				} 
+				else if (blspr.isInstanceOf[CharacterUnit]){
+					g.drawRect(spriteSize*i-camera.getCameraX(),spriteSize*j-camera.getCameraY,spriteSize-1,spriteSize-1)
+				}
+			}
+		}
+	}
 }

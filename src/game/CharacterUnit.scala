@@ -29,9 +29,6 @@ abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
 	var selectedWeapon : Int = 0
 	var faceR : Boolean = false
 	
-	/** moves the unit to the specified tile space if valid
-	 * 
-	 */
     def move{
 	  
 	}
@@ -54,21 +51,12 @@ abstract class CharacterUnit(weps: Array[Weapon], teamObj: Team) extends Sprite{
       
     }
     
-    /** unit uses item given index
-     * 
-     */
     def useItem(index: Int){
       weapons(index).attack(this,board)
     }
     
-    /** sets the unit's direction; true is right while left is false.
-     *  The unit's direction is set to left by default
-     * 
-     * MODIFIES: this
-     * EFFECTS: makes the unit face left or right
-     */
-    def faceRight(b:Boolean){
-      faceR = b
+    def turn(): Unit = {
+    	faceR = !faceR
     }
     
     def isFacingRight: Boolean = faceR

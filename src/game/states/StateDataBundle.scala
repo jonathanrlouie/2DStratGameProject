@@ -2,9 +2,13 @@ package game.states
 
 import scala.collection.mutable.LinkedList
 import game._
+import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Input
+import org.newdawn.slick.Graphics
 
 class StateDataBundle {
+	@scala.reflect.BeanProperty
+	var gc: GameContainer = null
 	@scala.reflect.BeanProperty
 	var board: Board = null
 	@scala.reflect.BeanProperty
@@ -17,6 +21,13 @@ class StateDataBundle {
 	var unitSel: CharacterUnit = null
 	@scala.reflect.BeanProperty
 	var delta: Int = 0
-	
+	@scala.reflect.BeanProperty
+	var imgHolder: ImageHolder = null
+	@scala.reflect.BeanProperty
+	var camera: Camera = null
+	@scala.reflect.BeanProperty
+	var spriteSize: Int = 0
+	@scala.reflect.BeanProperty
+	var graphics: Graphics = null
 	
 }
